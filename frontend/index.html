@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soilgenie - Cultivating Tomorrow's Harvest with AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fcf8; /* Very light green-white */
+            color: #212121; /* Dark grey for readability */
+        }
+        .header-bg {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .hero-section {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-background-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(29, 78, 216, 0.7), rgba(16, 185, 129, 0.7));
+            z-index: 1;
+        }
+        .slider-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover; /* Ensure background image covers the area */
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out; /* Smooth fade effect */
+        }
+        .slide.active {
+            opacity: 1;
+        }
+
+        .cta-button {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .cta-button:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        .feature-card {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 1.5rem; /* More rounded */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Stronger, softer shadow */
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        .feature-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(45deg, var(--tw-gradient-stops)); /* Dynamic gradient */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 2.8rem;
+            color: white;
+        }
+        .testimonial-card {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+        }
+        .testimonial-quote {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .testimonial-quote::before, .testimonial-quote::after {
+            content: '"';
+            font-family: 'Times New Roman', serif; /* Classic quote style */
+            font-size: 3rem;
+            color: #d1d5db;
+            position: absolute;
+            opacity: 0.7;
+        }
+        .testimonial-quote::before {
+            top: -0.5rem;
+            left: -1rem;
+        }
+        .testimonial-quote::after {
+            bottom: -1rem;
+            right: -1rem;
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        .author-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+            border: 3px solid #68d391; /* Green border */
+        }
+        .footer-link:hover {
+            color: #68d391; /* Green hover for footer links */
+        }
+        .how-it-works-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding-bottom: 3rem; /* Space for line */
+        }
+        .how-it-works-step .icon {
+            background-color: #fff;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .how-it-works-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 3rem;
+            background-color: #d1d5db;
+        }
+        @media (min-width: 768px) { /* For md and larger screens */
+            .how-it-works-grid .how-it-works-step:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: calc(100% - 1px); /* Position at the right edge */
+                transform: translateY(-50%);
+                width: 3rem; /* Horizontal line */
+                height: 2px;
+                background-color: #d1d5db;
+            }
+            .how-it-works-step {
+                padding-bottom: 0;
+            }
+        }
+        .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .accordion-header {
+            background-color: #f3f4f6;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #212121;
+        }
+        .accordion-content {
+            padding: 1rem 1.5rem;
+            background-color: #ffffff;
+            display: none;
+            overflow: hidden;
+        }
+        .accordion-header .icon {
+            transition: transform 0.3s ease;
+        }
+        .accordion-header.active .icon {
+            transform: rotate(180deg);
+        }
+        /* Mobile menu specific styles */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -100%; /* Start off-screen */
+            width: 75%; /* Adjust as needed */
+            height: 100%;
+            background-color: #1a202c; /* Dark background for mobile menu */
+            padding: 2rem;
+            box-shadow: -4px 0 10px rgba(0,0,0,0.2);
+            transition: right 0.3s ease-in-out;
+            z-index: 60; /* Higher than header */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .mobile-menu.open {
+            right: 0;
+        }
+        .mobile-menu a {
+            color: #e2e8f0;
+            font-size: 1.5rem;
+            padding: 1rem 0;
+            width: 100%;
+            text-align: left;
+            border-bottom: 1px solid #2d3748;
+            transition: background-color 0.3s ease;
+        }
+        .mobile-menu a:hover {
+            background-color: #2d3748;
+        }
+        .mobile-menu .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2.5rem;
+            color: #e2e8f0;
+            cursor: pointer;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 55;
+            display: none;
+        }
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header/Navigation -->
+    <header class="header-bg p-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="text-3xl font-extrabold text-green-700 font-montserrat">
+                <img src="images/Logo 2@300x.png" alt="Soilgenie Logo" class="h-10">
+            </div>
+            <nav class="space-x-6 hidden md:flex">
+                <a href="#features" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300 smooth-scroll">Features</a>
+                <a href="#how-it-works" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300 smooth-scroll">How It Works</a>
+                <a href="#our-reach" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300 smooth-scroll">Our Reach</a>
+                <a href="#testimonials" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300 smooth-scroll">Success Stories</a>
+                <a href="#faq" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300 smooth-scroll">FAQ</a>
+                <a href="#contact" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300 smooth-scroll">Contact</a>
+                <a href="login_selection.html" class="px-8 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 cta-button text-lg font-semibold shadow-md">Login</a>
+                <a href="signup_selection.html" class="px-8 py-2 border-2 border-green-600 text-green-600 rounded-full hover:bg-green-50 cta-button text-lg font-semibold shadow-md">Sign Up</a>
+            </nav>
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-button" class="md:hidden text-gray-700 text-2xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="overlay" onclick="toggleMobileMenu()"></div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu md:hidden">
+        <button class="close-button" onclick="toggleMobileMenu()">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="#features" class="smooth-scroll mobile-menu-link" onclick="toggleMobileMenu()">Features</a>
+        <a href="#how-it-works" class="smooth-scroll mobile-menu-link" onclick="toggleMobileMenu()">How It Works</a>
+        <a href="#our-reach" class="smooth-scroll mobile-menu-link" onclick="toggleMobileMenu()">Our Reach</a>
+        <a href="#testimonials" class="smooth-scroll mobile-menu-link" onclick="toggleMobileMenu()">Success Stories</a>
+        <a href="#faq" class="smooth-scroll mobile-menu-link" onclick="toggleMobileMenu()">FAQ</a>
+        <a href="#contact" class="smooth-scroll mobile-menu-link" onclick="toggleMobileMenu()">Contact</a>
+        <div class="w-full mt-4 border-t border-gray-700 pt-4">
+            <a href="login_selection.html" class="w-full text-center px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 cta-button text-lg font-semibold block mb-4">Login</a>
+            <a href="signup_selection.html" class="w-full text-center px-6 py-3 border-2 border-green-600 text-green-600 rounded-full hover:bg-green-50 cta-button text-lg font-semibold block">Sign Up</a>
+        </div>
+    </div>
+
+
+    <!-- Hero Section with Image Slider -->
+    <section class="hero-section text-white py-24 px-4">
+        <div class="slider-container">
+            <div class="slide active" style="background-image: url('https://placehold.co/1920x1080/0d5246/c2f0db?text=Vast+Farmland+from+Above')"></div>
+            <div class="slide" style="background-image: url('https://placehold.co/1920x1080/166534/ccfbf1?text=Healthy+Crops+Growing')"></div>
+            <div class="slide" style="background-image: url('https://placehold.co/1920x1080/4c0519/fecaca?text=Irrigation+System+in+Action')"></div>
+            <div class="slide" style="background-image: url('https://placehold.co/1920x1080/1e3a8a/bfdbfe?text=Farmer+Inspecting+Crops')"></div>
+        </div>
+        <div class="hero-background-overlay"></div>
+        <div class="container mx-auto relative z-20"> <!-- Increased z-index for content -->
+            <h1 class="text-6xl md:text-7xl font-extrabold mb-8 leading-tight font-montserrat">
+                Cultivate <span class="text-green-300">Success</span> with <br class="hidden md:block"> AI-Driven Farm Insights
+            </h1>
+            <p class="text-xl md:text-2xl mb-10 max-w-4xl mx-auto opacity-90">
+                Revolutionizing agriculture in Nigeria with precise soil intelligence,
+                satellite monitoring, and personalized recommendations for optimal yields and sustainable growth.
+            </p>
+            <div class="space-y-4 md:space-y-0 md:space-x-6">
+                <a href="signup_selection.html" class="px-10 py-5 bg-green-500 text-white text-xl font-bold rounded-full shadow-xl hover:bg-green-600 cta-button">Start Your Free Trial</a>
+                <a href="#features" class="px-10 py-5 border-2 border-white text-white text-xl font-bold rounded-full shadow-xl hover:bg-white hover:text-blue-700 cta-button smooth-scroll">Discover Features</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Us / Our Mission Section -->
+    <section id="about" class="py-20 bg-white">
+        <div class="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <img src="https://placehold.co/600x400/81c784/ffffff?text=Sustainable+Farming" alt="Farmers working sustainably" class="rounded-2xl shadow-xl transform transition duration-500 hover:scale-105">
+            </div>
+            <div class="text-left">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-6 font-montserrat leading-tight">
+                    Our Mission: Empowering Every Nigerian Farmer
+                </h2>
+                <p class="text-lg text-gray-700 mb-6 leading-relaxed">
+                    At Soilgenie, we believe in the power of innovation to transform agriculture.
+                    Our mission is to equip Nigerian farmers with accessible, cutting-edge technology
+                    that turns complex satellite data into simple, actionable insights. We are committed
+                    to fostering sustainable farming practices, boosting food security, and enhancing
+                    the livelihoods of farmers across the nation.
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed">
+                    By providing precise recommendations on soil health, crop vitality, and weather trends,
+                    we help you make informed decisions that lead to higher yields, reduced costs, and a more resilient farm.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="my-12 border-gray-200">
+
+    <!-- Our Reach / Inclusivity Section -->
+    <section id="our-reach" class="py-20 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div class="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="text-right lg:order-2"> <!-- Image on right for larger screens -->
+                <img src="https://placehold.co/600x400/7cb342/ffffff?text=Agent+Assisting+Farmer" alt="Agent assisting a farmer" class="rounded-2xl shadow-xl transform transition duration-500 hover:scale-105">
+            </div>
+            <div class="text-left lg:order-1"> <!-- Text on left for larger screens -->
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-6 font-montserrat leading-tight">
+                    Bridging the Digital Divide: <span class="text-blue-700">Empowering Every Farmer</span>
+                </h2>
+                <p class="text-lg text-gray-700 mb-6 leading-relaxed">
+                    We understand that not all farmers have easy access to digital tools or possess high literacy.
+                    That's why Soilgenie is built on a foundation of **inclusivity and direct support**. Our extensive network of dedicated agents plays a crucial role in bringing the power of AI to every farm.
+                </p>
+                <ul class="text-left text-lg text-gray-700 space-y-3 mb-6">
+                    <li><i class="fas fa-handshake text-blue-600 mr-3"></i> **Personalized Assistance:** Agents work one-on-one with farmers, providing hands-on help.</li>
+                    <li><i class="fas fa-map-signs text-blue-600 mr-3"></i> **Facilitated Mapping:** They assist in mapping farmlands and inputting data, simplifying the onboarding process.</li>
+                    <li><i class="fas fa-comment-alt text-blue-600 mr-3"></i> **Clear Communication:** Complex data is translated into simple, actionable advice, delivered verbally or via targeted SMS in local languages.</li>
+                    <li><i class="fas fa-chart-pie text-blue-600 mr-3"></i> **Data Interpretation:** Agents help farmers understand soil analyses, crop health reports, and recommendations.</li>
+                </ul>
+                <p class="text-lg text-gray-700 leading-relaxed font-semibold">
+                    With Soilgenie, every farmer, regardless of their digital literacy, can harness advanced technology to thrive.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="my-12 border-gray-200">
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-gradient-to-br from-green-50 to-blue-50">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-16 font-montserrat">Our Powerful Solutions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Feature 1 -->
+                <div class="feature-card" style="--tw-gradient-stops: #10b981, #065f46;">
+                    <div class="feature-icon-wrapper from-green-500 to-green-700">
+                        <i class="fas fa-satellite feature-icon"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">Precision Farm Mapping</h3>
+                    <p class="text-lg text-gray-600">Map your land with unparalleled accuracy using advanced satellite and GIS technologies for detailed insights.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feature-card" style="--tw-gradient-stops: #3b82f6, #1e40af;">
+                    <div class="feature-icon-wrapper from-blue-500 to-blue-700">
+                        <i class="fas fa-seedling feature-icon"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">Dynamic Crop Health Monitoring</h3>
+                    <p class="text-lg text-gray-600">Track crop vigor, detect stress, and identify growth patterns across your fields with cutting-edge NDVI analysis.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feature-card" style="--tw-gradient-stops: #f59e0b, #b45309;">
+                    <div class="feature-icon-wrapper from-orange-400 to-orange-600">
+                        <i class="fas fa-droplet feature-icon"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">Intelligent Water Management</h3>
+                    <p class="text-lg text-gray-600">Optimize irrigation with real-time soil moisture data and predictive analytics to save water and boost yield.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="feature-card" style="--tw-gradient-stops: #8b5cf6, #5b21b6;">
+                    <div class="feature-icon-wrapper from-purple-500 to-purple-700">
+                        <i class="fas fa-flask feature-icon"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">AI-Powered Soil Analysis</h3>
+                    <p class="text-lg text-gray-600">Receive precise fertilizer and nutrient recommendations tailored to your soil's unique composition.</p>
+                </div>
+                <!-- Feature 5 -->
+                <div class="feature-card" style="--tw-gradient-stops: #ef4444, #991b1b;">
+                    <div class="feature-icon-wrapper from-red-500 to-red-700">
+                        <i class="fas fa-cloud-sun-rain feature-icon"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">Hyper-Local Weather Forecasts</h3>
+                    <p class="text-lg text-gray-600">Stay informed with accurate, farm-specific weather trends and alerts, crucial for planting and harvesting.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="feature-card" style="--tw-gradient-stops: #14b8a6, #0f766e;">
+                    <div class="feature-icon-wrapper from-teal-500 to-teal-700">
+                        <i class="fas fa-chart-line feature-icon"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">Predictive Yield Optimization</h3>
+                    <p class="text-lg text-gray-600">Forecast your harvests with confidence and gain actionable insights to maximize your farm's productivity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="my-12 border-gray-200">
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-16 font-montserrat">How Soilgenie Works</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16 how-it-works-grid">
+                <!-- Step 1 -->
+                <div class="how-it-works-step relative">
+                    <div class="icon"><i class="fas fa-map-marked-alt"></i></div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-800">1. Map Your Farm</h3>
+                    <p class="text-lg text-gray-600">Define your farm boundaries easily using our intuitive mapping tools or by uploading a KML file.</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="how-it-works-step relative">
+                    <div class="icon"><i class="fas fa-satellite-dish"></i></div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-800">2. Satellite Data Collection</h3>
+                    <p class="text-lg text-gray-600">Our system continuously collects high-resolution satellite imagery and localized weather data for your mapped areas.</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="how-it-works-step relative">
+                    <div class="icon"><i class="fas fa-robot"></i></div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-800">3. AI-Powered Analysis</h3>
+                    <p class="text-lg text-gray-600">Advanced AI algorithms process this data to generate insights on crop health, soil moisture, nutrient needs, and more.</p>
+                </div>
+                <!-- Step 4 -->
+                <div class="how-it-works-step relative">
+                    <div class="icon"><i class="fas fa-hand-holding-seedling"></i></div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-800">4. Actionable Recommendations</h3>
+                    <p class="text-lg text-gray-600">Receive precise, personalized recommendations via your dashboard and SMS for optimal farm management.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="my-12 border-gray-200">
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-white">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-16 font-montserrat">Frequently Asked Questions</h2>
+            <div class="max-w-4xl mx-auto">
+                <!-- FAQ Item 1 -->
+                <div class="accordion-item">
+                    <div class="accordion-header flex justify-between items-center cursor-pointer p-4 text-lg" onclick="toggleAccordion(this)">
+                        What kind of data does Soilgenie collect from my farm?
+                        <i class="fas fa-chevron-down icon transition-transform duration-300"></i>
+                    </div>
+                    <div class="accordion-content p-4 text-gray-700 text-left">
+                        Soilgenie primarily uses **satellite imagery** (like NDVI for crop health, and other bands for soil moisture) and integrates **hyper-local weather data** specific to your farm's mapped location. When available, it can also process data from manual soil tests you might conduct.
+                    </div>
+                </div>
+                <!-- FAQ Item 2 -->
+                <div class="accordion-item">
+                    <div class="accordion-header flex justify-between items-center cursor-pointer p-4 text-lg" onclick="toggleAccordion(this)">
+                        How accurate are the fertilizer recommendations?
+                        <i class="fas fa-chevron-down icon transition-transform duration-300"></i>
+                    </div>
+                    <div class="accordion-content p-4 text-gray-700 text-left">
+                        Our fertilizer recommendations are generated by **advanced AI models** that analyze your specific farm's soil data, current crop health (from satellite imagery), and local weather conditions. While designed for high accuracy, we always recommend verifying with local agricultural experts.
+                    </div>
+                </div>
+                <!-- FAQ Item 3 -->
+                <div class="accordion-item">
+                    <div class="accordion-header flex justify-between items-center cursor-pointer p-4 text-lg" onclick="toggleAccordion(this)">
+                        Can I use Soilgenie if I have multiple farms?
+                        <i class="fas fa-chevron-down icon transition-transform duration-300"></i>
+                    </div>
+                    <div class="accordion-content p-4 text-gray-700 text-left">
+                        Yes, our **Pro Plan** allows you to map and monitor up to 5 farms, and the **Enterprise Plan** offers unlimited farm management, tailored for larger operations and cooperatives.
+                    </div>
+                </div>
+                <!-- FAQ Item 4 -->
+                <div class="accordion-item">
+                    <div class="accordion-header flex justify-between items-center cursor-pointer p-4 text-lg" onclick="toggleAccordion(this)">
+                        Is my farm data secure with Soilgenie?
+                        <i class="fas fa-chevron-down icon transition-transform duration-300"></i>
+                    </div>
+                    <div class="accordion-content p-4 text-gray-700 text-left">
+                        Absolutely. We prioritize the security and privacy of your data. All data is encrypted both in transit and at rest, and we adhere to strict data protection protocols. Your farm data is used solely to provide you with personalized insights and recommendations.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="my-12 border-gray-200">
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-16 font-montserrat">Hear From Our Thriving Farmers</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="testimonial-card">
+                    <p class="testimonial-quote">
+                        "Soilgenie has been a blessing! My yields have seen a remarkable increase, and I finally understand what my soil truly needs. It’s simplified farming for me."
+                    </p>
+                    <div class="author-info">
+                        <img src="https://placehold.co/60x60/d1d5db/374151?text=Aisha" alt="Aisha K." class="author-avatar">
+                        <div>
+                            <p class="font-bold text-gray-900 text-lg">Aisha K.</p>
+                            <p class="text-gray-600">Maize Farmer, Kano State</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-quote">
+                        "The real-time moisture data is a game-changer. I've optimized my irrigation, saved so much water, and my crops are healthier than ever before. Truly indispensable."
+                    </p>
+                    <div class="author-info">
+                        <img src="https://placehold.co/60x60/d1d5db/374151?text=Emeka" alt="Emeka O." class="author-avatar">
+                        <div>
+                            <p class="font-bold text-gray-900 text-lg">Emeka O.</p>
+                            <p class="text-gray-600">Rice Farmer, Niger Delta</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <p class="testimonial-quote">
+                        "I used to guess about my soil's needs. Now, with Soilgenie's precise recommendations, I apply exactly what's needed, saving money and seeing amazing growth."
+                    </p>
+                    <div class="author-info">
+                        <img src="https://placehold.co/60x60/d1d5db/374151?text=Aminu" alt="Aminu M." class="author-avatar">
+                        <div>
+                            <p class="font-bold text-gray-900 text-lg">Aminu M.</p>
+                            <p class="text-gray-600">Vegetable Farmer, Kaduna State</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <hr class="my-12 border-gray-200">
+
+    <!-- Call to Action Section -->
+    <section class="bg-gradient-to-r from-green-700 to-blue-700 text-white py-20 px-4">
+        <div class="container mx-auto text-center">
+            <h2 class="text-5xl font-extrabold mb-8 leading-tight font-montserrat">
+                Ready to Experience a <span class="text-yellow-300">Smarter Future</span> for Your Farm?
+            </h2>
+            <p class="text-xl md:text-2xl mb-12 max-w-3xl mx-auto opacity-90">
+                Join thousands of farmers already benefiting from Soilgenie's advanced insights.
+            </p>
+            <a href="signup_selection.html" class="px-12 py-6 bg-white text-blue-700 text-xl font-bold rounded-full shadow-2xl hover:bg-gray-100 cta-button">
+                Sign Up for Free
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact" class="bg-gray-900 text-gray-300 py-12">
+        <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10">
+            <div>
+                <h3 class="text-3xl font-extrabold mb-5 text-green-400 font-montserrat">
+                    <img src="https://placehold.co/100x40/065f46/ffffff?text=Soilgenie" alt="Soilgenie Logo" class="h-10">
+                </h3>
+                <p class="text-sm leading-relaxed">
+                    Pioneering sustainable agriculture through cutting-edge AI and space technology.
+                    Dedicated to empowering farmers for a thriving tomorrow.
+                </p>
+            </div>
+            <div>
+                <h4 class="text-xl font-bold mb-5 text-white">Quick Links</h4>
+                <ul class="space-y-3">
+                    <li><a href="#features" class="footer-link text-gray-400 hover:text-white transition duration-300 smooth-scroll">Features</a></li>
+                    <li><a href="#how-it-works" class="footer-link text-gray-400 hover:text-white transition duration-300 smooth-scroll">How It Works</a></li>
+                    <li><a href="#our-reach" class="footer-link text-gray-400 hover:text-white transition duration-300 smooth-scroll">Our Reach</a></li>
+                    <li><a href="#testimonials" class="footer-link text-gray-400 hover:text-white transition duration-300 smooth-scroll">Testimonials</a></li>
+                    <li><a href="#faq" class="footer-link text-gray-400 hover:text-white transition duration-300 smooth-scroll">FAQ</a></li>
+                    <li><a href="#contact" class="footer-link text-gray-400 hover:text-white transition duration-300 smooth-scroll">Contact</a></li>
+                    <li><a href="#" class="footer-link text-gray-400 hover:text-white transition duration-300">Privacy Policy</a></li>
+                    <li><a href="#" class="footer-link text-gray-400 hover:text-white transition duration-300">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-xl font-bold mb-5 text-white">Support</h4>
+                <ul class="space-y-3">
+                    <li><a href="#" class="footer-link text-gray-400 hover:text-white transition duration-300">Help Center</a></li>
+                    <li><a href="#" class="footer-link text-gray-400 hover:text-white transition duration-300">FAQs</a></li>
+                    <li><a href="#" class="footer-link text-gray-400 hover:text-white transition duration-300">Contact Support</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-xl font-bold mb-5 text-white">Connect With Us</h4>
+                <p class="text-gray-400 mb-4">Email: info@soilgenie.com</p>
+                <p class="text-gray-400 mb-4">Phone: +234 800 123 4567</p>
+                <div class="flex space-x-5 mt-4">
+                    <a href="#" class="text-gray-400 hover:text-white transform hover:scale-110 transition duration-300 text-2xl"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transform hover:scale-110 transition duration-300 text-2xl"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transform hover:scale-110 transition duration-300 text-2xl"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transform hover:scale-110 transition duration-300 text-2xl"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="text-center text-gray-500 text-sm mt-10">
+            &copy; 2025 Soilgenie Ltd. All rights reserved. | Proudly developed by HaidarSoft Technologies Ltd.
+        </div>
+    </footer>
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a.smooth-scroll').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                document.querySelector(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Accordion functionality for FAQ
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            const content = header.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+            } else {
+                content.style.display = "block";
+            }
+        }
+
+        // Image Slider Functionality
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+        const slideInterval = 5000; // Change image every 5 seconds
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        // Start automatic sliding
+        setInterval(nextSlide, slideInterval);
+
+        // Initial display
+        showSlide(currentSlide);
+
+        // Mobile Menu Functionality
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+        const mobileMenuLinks = document.querySelectorAll('.mobile-menu-link'); // Select all mobile menu links
+
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('open');
+            mobileMenuOverlay.classList.toggle('active');
+            // Prevent scrolling on the body when mobile menu is open
+            document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+        }
+
+        mobileMenuButton.addEventListener('click', toggleMobileMenu);
+
+        // Close mobile menu when a link is clicked
+        mobileMenuLinks.forEach(link => {
+            link.addEventListener('click', toggleMobileMenu);
+        });
+
+    </script>
+</body>
+</html>

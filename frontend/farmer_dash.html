@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Dashboard - Soilgenie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fcf8; /* Very light green-white, consistent with landing */
+            color: #212121; /* Dark grey for readability */
+        }
+        .header-bg {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .sidebar {
+            width: 280px; /* Default width */
+            min-height: 100vh;
+            background-color: #065f46; /* Deep green for farmer sidebar, consistent with brand */
+            color: #e2e8f0;
+            padding: 1.5rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            border-top-right-radius: 1rem; /* Rounded top-right for desktop */
+            border-bottom-right-radius: 1rem; /* Rounded bottom-right for desktop */
+            position: sticky; /* Sticky sidebar */
+            top: 0;
+            left: 0;
+            z-index: 40; /* Ensure sidebar is above main content but below header */
+            transition: width 0.3s ease, margin 0.3s ease; /* Smooth transition for width and margin */
+        }
+        .sidebar.collapsed {
+            width: 80px; /* Collapsed width, just enough for icons */
+            min-width: 80px;
+        }
+        .sidebar.collapsed .sidebar-text,
+        .sidebar.collapsed .profile-details h2,
+        .sidebar.collapsed .profile-details p { /* Hide text within links, profile name/location */
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-link {
+            justify-content: center; /* Center icons when text is hidden */
+            padding: 0.75rem 0; /* Adjust padding for icons only */
+        }
+        .sidebar.collapsed .sidebar-link i {
+            margin-right: 0; /* Remove margin when text is hidden */
+        }
+        .sidebar.collapsed .profile-image {
+             margin-bottom: 0; /* Adjust margin for collapsed profile */
+        }
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+        .sidebar .profile-image {
+            margin-bottom: 0.5rem;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+            margin-left: 280px; /* Initial margin to offset sidebar width */
+            transition: margin-left 0.3s ease; /* Add transition for smooth shift */
+        }
+        .main-content.shifted {
+            margin-left: 80px; /* Adjusted margin when sidebar is collapsed */
+        }
+
+        .sidebar-toggle-container {
+            position: absolute; /* Position relative to header or parent flex container */
+            top: 1.5rem; /* Adjust as needed */
+            left: 290px; /* Just outside the expanded sidebar */
+            z-index: 51; /* Above sidebar, below main header content */
+            transition: left 0.3s ease;
+        }
+        .sidebar.collapsed + .main-content .sidebar-toggle-container {
+             left: 90px; /* Adjust position when sidebar collapses */
+        }
+        .sidebar-toggle-button {
+            background-color: #065f46; /* Sidebar color */
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; /* Make it round */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .sidebar-toggle-button:hover {
+            background-color: #10b981; /* Lighter green */
+            transform: scale(1.05);
+        }
+
+        .metric-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Softer, slightly larger shadow */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0; /* Subtle border */
+        }
+
+        .map-container {
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            background-color: #edf2f7; /* Lighter grey for placeholder */
+            min-height: 450px; /* Ensure map has sufficient height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #4a5568;
+            position: relative;
+            background-size: cover; /* Cover for background image */
+            background-position: center; /* Center background image */
+        }
+        .map-overlay-tools {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .map-draw-tools {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .map-info-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 0.75rem;
+            max-width: 80%;
+        }
+
+        .weather-card {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .weather-day {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+        .weather-day:last-child {
+            border-bottom: none;
+        }
+        .weather-icon {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+        }
+        .ai-assistant-card {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e2e8f0;
+        }
+        .chat-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+        }
+        .user-message {
+            background-color: #e0f7fa; /* Light blue for user */
+            padding: 0.6rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.5rem;
+            align-self: flex-end; /* Align user messages to the right */
+            max-width: 80%;
+            word-wrap: break-word; /* Ensure long words wrap */
+        }
+        .ai-message {
+            background-color: #e6fffa; /* Light green for AI */
+            padding: 0.6rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.5rem;
+            align-self: flex-start; /* Align AI messages to the left */
+            max-width: 80%;
+            word-wrap: break-word; /* Ensure long words wrap */
+        }
+        .input-field {
+            width: 100%; /* Make input fields full width */
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Blue-500 with opacity */
+        }
+        .button-primary {
+            background-color: #10b981; /* Green */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .button-primary:hover {
+            background-color: #065f46; /* Darker green */
+            transform: translateY(-1px);
+        }
+
+        /* SMS toggle switch specific styles */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+        }
+
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+          border-radius: 34px;
+        }
+
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 26px;
+          width: 26px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          -webkit-transition: .4s;
+          transition: .4s;
+          border-radius: 50%;
+        }
+
+        /* Removed explicit background-color here to rely on Tailwind's peer-checked */
+        input:focus + .slider {
+          box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+          -webkit-transform: translateX(26px);
+          -ms-transform: translateX(26px);
+          transform: translateX(26px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+          border-radius: 34px;
+        }
+
+        .slider.round:before {
+          border-radius: 50%;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 1023px) { /* For screens smaller than large (lg) */
+            .sidebar {
+                width: 100%;
+                min-height: unset;
+                border-radius: 0; /* Remove specific desktop border radius */
+                padding: 1rem;
+                position: relative; /* Remove sticky on mobile for better flow */
+                margin-bottom: 1.5rem;
+            }
+            .sidebar.collapsed {
+                width: 100%; /* Collapse is effectively ignored on mobile for now */
+            }
+            .main-content {
+                padding: 1.5rem;
+                margin-left: 0; /* No left margin on mobile */
+            }
+            .main-content.shifted {
+                margin-left: 0; /* No left margin on mobile even if toggled */
+            }
+            .sidebar-toggle-container {
+                display: none; /* Hide toggle button on small screens for simplicity */
+            }
+            .grid-cols-1, .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Auto-fit columns */
+            }
+            .map-info-box {
+                font-size: 1.2rem;
+                padding: 1rem 1.5rem;
+            }
+            .sidebar a {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+            .sidebar a i {
+                margin-right: 0.5rem;
+                font-size: 1rem;
+            }
+        }
+        @media (min-width: 768px) { /* Medium screens and up */
+            .main-content-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns for medium screens */
+            }
+        }
+        @media (min-width: 1024px) { /* Large screens and up */
+            .main-content-grid {
+                grid-template-columns: repeat(3, 1fr); /* 3 columns for large screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar -->
+        <div id="farmerSidebar" class="sidebar">
+            <div class="text-3xl font-extrabold text-green-500 mb-10 text-center">
+                <img src="images/logo 1@300x (1).png" alt="Soilgenie Logo" class="h-10 mx-auto mb-4">
+                <p class="font-montserrat text-white text-xl sidebar-text">Farmer Dashboard</p>
+            </div>
+            <nav>
+                <a href="#overview" class="sidebar-link active"><i class="fas fa-home"></i> <span class="sidebar-text">Dashboard Overview</span></a>
+                <a href="#farm-map-section" class="sidebar-link"><i class="fas fa-map-marked-alt"></i> <span class="sidebar-text">My Farm Map</span></a>
+                <a href="#map-new-farmland-farmer" class="sidebar-link"><i class="fas fa-map-pin"></i> <span class="sidebar-text">Map My Farmland</span></a>
+                <a href="#weather-trends-section" class="sidebar-link"><i class="fas fa-cloud-sun"></i> <span class="sidebar-text">Weather Trends</span></a>
+                <a href="#recommendations-section" class="sidebar-link"><i class="fas fa-seedling"></i> <span class="sidebar-text">Recommendations</span></a>
+                <a href="#ai-assistant-section" class="sidebar-link"><i class="fas fa-robot"></i> <span class="sidebar-text">Ask Soilgenie ✨</span></a>
+                <a href="#sms-settings-section" class="sidebar-link"><i class="fas fa-sms"></i> <span class="sidebar-text">SMS Notifications</span></a>
+                <a href="#" class="sidebar-link"><i class="fas fa-clipboard-list"></i> <span class="sidebar-text">My Tasks</span></a>
+                <a href="#" class="sidebar-link"><i class="fas fa-file-alt"></i> <span class="sidebar-text">My Reports</span></a>
+                <a href="#" class="sidebar-link"><i class="fas fa-cog"></i> <span class="sidebar-text">Settings</span></a>
+                <a href="index.html" class="sidebar-link text-red-300 hover:bg-red-700"><i class="fas fa-sign-out-alt"></i> <span class="sidebar-text">Logout</span></a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Toggle Button (positioned within the main flex container) -->
+        <div class="sidebar-toggle-container hidden lg:block">
+            <button id="sidebarToggleButton" class="sidebar-toggle-button">
+                <i class="fas fa-chevron-left" id="toggleIcon"></i>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="main-content">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-8 font-montserrat" id="welcomeMessage">Welcome, Farmer John Doe!</h1>
+            <p class="text-lg text-gray-600 mb-8">Here's a comprehensive overview of your farm's performance and personalized insights.</p>
+
+            <!-- Key Metrics -->
+            <section id="overview" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div class="metric-card bg-green-50">
+                    <div>
+                        <p class="text-gray-500 text-sm">Overall Crop Health (NDVI)</p>
+                        <p class="text-3xl font-bold text-green-600" id="overallCropHealthValue">0.85</p>
+                    </div>
+                    <i class="fas fa-leaf text-green-400 text-4xl"></i>
+                </div>
+                <div class="metric-card bg-blue-50">
+                    <div>
+                        <p class="text-gray-500 text-sm">Avg. Soil Moisture</p>
+                        <p class="text-3xl font-bold text-blue-600" id="avgSoilMoistureValue">65%</p>
+                    </div>
+                    <i class="fas fa-tint text-blue-400 text-4xl"></i>
+                </div>
+                <div class="metric-card bg-yellow-50">
+                    <div>
+                        <p class="text-gray-500 text-sm">Estimated Yield</p>
+                        <p class="text-3xl font-bold text-yellow-600" id="estimatedYieldValue">5.2 tons/acre</p>
+                    </div>
+                    <i class="fas fa-wheat-awn text-yellow-400 text-4xl"></i>
+                </div>
+                <div class="metric-card bg-purple-50">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Area Mapped</p>
+                        <p class="text-3xl font-bold text-purple-600" id="totalAreaMappedValue">150 Hectares</p>
+                    </div>
+                    <i class="fas fa-map-marked-alt text-purple-400 text-4xl"></i>
+                </div>
+            </section>
+
+            <!-- Alerts/Notifications -->
+            <div class="mb-10 bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 rounded-md shadow-md" role="alert">
+                <p class="font-bold">Alert: Low Soil Moisture Detected!</p>
+                <p class="text-sm">Areas in Sector 3 and 5 are showing critical moisture levels. Consider irrigation within 24 hours.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Farm Map with Mapping Tools & Overlays -->
+                <section id="farm-map-section" class="map-container lg:col-span-1" style="background-image: url('https://placehold.co/1200x600/a7f3d0/059669?text=Your+Farm+Map+with+Crop+Health+(Green%3DHealthy%2C+Yellow%3DModerate%2C+Red%3DStressed)+%26+Soil+Moisture+Overlay')">
+                    <div class="map-overlay-tools">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Map Overlay:</label>
+                        <select class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md">
+                            <option>Crop Health (NDVI)</option>
+                            <option>Soil Moisture</option>
+                            <option>Nutrient Levels</option>
+                            <option>Farm Zones</option>
+                        </select>
+                    </div>
+                    <div class="map-draw-tools flex space-x-2">
+                        <button class="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 text-sm"><i class="fas fa-pencil-alt mr-1"></i> Draw Farm</button>
+                        <button class="px-3 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition duration-300 text-sm"><i class="fas fa-upload mr-1"></i> Upload KML</button>
+                        <button class="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-300 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> Add Point</button>
+                    </div>
+                    <div class="map-info-box">
+                        <p class="text-lg font-semibold">Interactive Map Coming Soon!</p>
+                        <p class="text-sm mt-2">Accurate mapping helps us provide precise recommendations.</p>
+                    </div>
+                </section>
+
+                <!-- Weather Trends Widget -->
+                <section id="weather-trends-section" class="weather-card">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Weather Trends (Your Farm)</h3>
+                    <div class="text-gray-600 text-sm mb-4">
+                        <p>Current: <i class="fas fa-cloud-sun text-yellow-500"></i> 28°C, Partly Cloudy</p>
+                        <p>Humidity: 70% | Wind: 10 km/h</p>
+                    </div>
+                    <h4 class="font-semibold text-gray-700 mb-2">7-Day Forecast:</h4>
+                    <div class="space-y-2">
+                        <div class="weather-day">
+                            <span class="font-medium">Today</span>
+                            <span class="text-gray-500"><i class="fas fa-cloud-sun text-yellow-500 weather-icon"></i> 28°C / 22°C</span>
+                        </div>
+                        <div class="weather-day">
+                            <span class="font-medium">Tomorrow</span>
+                            <span class="text-gray-500"><i class="fas fa-cloud-showers-heavy text-blue-500 weather-icon"></i> 27°C / 21°C <span class="text-xs ml-1">(50% Rain)</span></span>
+                        </div>
+                        <div class="weather-day">
+                            <span class="font-medium">Sun</span>
+                            <span class="text-gray-500"><i class="fas fa-sun text-orange-500 weather-icon"></i> 30°C / 23°C</span>
+                        </div>
+                        <div class="weather-day">
+                            <span class="font-medium">Mon</span>
+                            <span class="text-gray-500"><i class="fas fa-cloud text-gray-400 weather-icon"></i> 29°C / 22°C</span>
+                            </div>
+                        <div class="weather-day">
+                            <span class="font-medium">Tue</span>
+                            <span class="text-gray-500"><i class="fas fa-umbrella-beach text-green-500 weather-icon"></i> 26°C / 20°C <span class="text-xs ml-1">(70% Rain)</span></span>
+                        </div>
+                        <div class="weather-day">
+                            <span class="font-medium">Wed</span>
+                            <span class="text-gray-500"><i class="fas fa-cloud-sun-rain text-indigo-500 weather-icon"></i> 27°C / 21°C</span>
+                        </div>
+                        <div class="weather-day">
+                            <span class="font-medium">Thu</span>
+                            <span class="text-gray-500"><i class="fas fa-sun text-orange-500 weather-icon"></i> 31°C / 24°C</span>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 button-primary-light">View Detailed Weather</button>
+                </section>
+            </div>
+
+            <!-- New: Map My Farmland Section (for Farmers to self-map) -->
+            <section id="map-new-farmland-farmer" class="dashboard-card mt-10">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Map My Farmland</h3>
+                <p class="text-gray-600 mb-4">Provide details about your farm to get personalized insights and recommendations.</p>
+                <form id="farmland-mapping-form-farmer" class="space-y-4">
+                    <!-- Farmer ID will be automatically added from the logged-in user's profile -->
+                    <div>
+                        <label for="farm-name-input-farmer" class="block text-left text-gray-700 font-medium mb-1">Farm Name (Optional)</label>
+                        <input type="text" id="farm-name-input-farmer" class="input-field" placeholder="e.g., Main Maize Field">
+                    </div>
+                    <div>
+                        <label for="farm-location-input-farmer" class="block text-left text-gray-700 font-medium mb-1">Farm Location (State, LGA, Village)</label>
+                        <input type="text" id="farm-location-input-farmer" class="input-field" placeholder="e.g., Kano, Dawakin Tofa, Gidan Kaya" required>
+                    </div>
+                    <div>
+                        <label for="farm-area-input-farmer" class="block text-left text-gray-700 font-medium mb-1">Approximate Farm Area (in Hectares)</label>
+                        <input type="number" id="farm-area-input-farmer" class="input-field" placeholder="e.g., 5" min="0.1" step="0.1" required>
+                    </div>
+                    <div>
+                        <label for="crop-type-input-farmer" class="block text-left text-gray-700 font-medium mb-1">Intended Crop Type</label>
+                        <select id="crop-type-input-farmer" class="input-field" required>
+                            <option value="">-- Select Crop --</option>
+                            <option value="Maize">Maize</option>
+                            <option value="Rice">Rice</option>
+                            <option value="Cassava">Cassava</option>
+                            <option value="Yam">Yam</option>
+                            <option value="Sorghum">Sorghum</option>
+                            <option value="Millet">Millet</option>
+                            <option value="Vegetables">Vegetables (e.g., Tomatoes, Pepper)</option>
+                            <option value="Cocoa">Cocoa</option>
+                            <option value="Other">Other (specify in notes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="farm-notes-farmer" class="block text-left text-gray-700 font-medium mb-1">Additional Notes (e.g., specific boundaries, challenges)</label>
+                        <textarea id="farm-notes-farmer" rows="3" class="input-field" placeholder="Any specific details about your farm or mapping..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-lg font-semibold text-lg button-primary hover:bg-green-700 shadow-md">
+                        <i class="fas fa-plus-circle mr-2"></i> Submit My Farmland
+                    </button>
+                </form>
+                <div id="mapping-message-farmer" class="mt-4 p-3 rounded-lg hidden"></div>
+            </section>
+
+
+            <!-- Recommendations Section -->
+            <section id="recommendations-section" class="mt-10 weather-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Personalized Recommendations</h3>
+                <p class="text-gray-600 mb-4">Timely advice for optimal farm management based on AI insights.</p>
+                <ul id="recommendationsList" class="list-disc list-inside text-left text-gray-700 space-y-2">
+                    <!-- Recommendations will be loaded here dynamically -->
+                    <li>**Fertilizer:** Apply 2 bags of NPK (15-15-15) per hectare to maize fields based on latest soil analysis. (Placeholder)</li>
+                    <li>**Irrigation:** Reduce irrigation in Zone 3 by 15% for the next 48 hours to prevent waterlogging, following recent rainfall. (Placeholder)</li>
+                </ul>
+                <button class="mt-4 w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 button-primary">View All Recommendations</button>
+            </section>
+
+            <!-- SMS Notification Settings -->
+            <section id="sms-settings-section" class="mt-10 weather-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">SMS Notification Settings</h3>
+                <p class="text-gray-600 mb-4">Get timely farm updates and recommendations directly to your phone, even without internet.</p>
+                <div class="flex items-center justify-between mb-4">
+                    <label for="smsToggle" class="text-lg text-gray-700 font-medium">Receive Recommendations via SMS:</label>
+                    <label class="switch">
+                        <input type="checkbox" id="smsToggle" class="peer">
+                        <span class="slider round bg-gray-300 peer-checked:bg-green-500"></span>
+                    </label>
+                </div>
+                <div class="mb-4">
+                    <label for="smsNumber" class="block text-sm font-medium text-gray-700 mb-2">Registered SMS Number:</label>
+                    <input type="tel" id="smsNumber" value="+2348012345678" class="input-field w-full md:w-1/2 bg-gray-100 cursor-not-allowed" disabled>
+                    <p class="text-xs text-gray-500 mt-1">This number is linked to your account. To change it, please update your profile settings.</p>
+                </div>
+                <div class="mt-4">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-2">SMS Content Preferences:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="smsFertilizer" class="mr-2" checked>
+                            <label for="smsFertilizer" class="text-gray-700">Fertilizer Recommendations</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="smsWeather" class="mr-2" checked>
+                            <label for="smsWeather" class="text-gray-700">Weather Alerts</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="smsPestDisease" class="mr-2">
+                            <label for="smsPestDisease" class="text-gray-700">Pest & Disease Warnings</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="smsYieldUpdates" class="mr-2">
+                            <label for="smsYieldUpdates" class="text-gray-700">Yield Forecast Updates</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ask Soilgenie AI Assistant Section -->
+            <section id="ai-assistant-section" class="mt-10 ai-assistant-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Ask Soilgenie ✨ (AI Assistant)</h3>
+                <p class="text-gray-600 mb-4">Your intelligent farm companion. Ask anything about your crops, soil, pests, or agricultural best practices.</p>
+                <div id="chatHistory" class="chat-box">
+                    <div class="ai-message">Hello! I'm your AI farm assistant. Ask me anything about your farm, crops, soil, pests, or general agricultural advice.</div>
+                </div>
+                <div class="flex mt-4">
+                    <input type="text" id="aiQuestionInput" placeholder="Type your question here..." class="input-field flex-1 mr-4">
+                    <button id="sendAiQuestion" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300 font-semibold flex items-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Send
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/'; // Your Django backend API base URL
+        let currentFarmerProfileId = null; // To store the logged-in farmer's profile ID
+
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Smooth scrolling for sidebar links
+        document.querySelectorAll('.sidebar-link').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active', 'bg-green-700'));
+                // Add active class to the clicked link
+                this.classList.add('active', 'bg-green-700');
+
+                const targetId = this.getAttribute('href');
+                document.querySelector(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Toggle sidebar collapse functionality
+        const sidebar = document.getElementById('farmerSidebar');
+        const mainContent = document.getElementById('mainContent');
+        const toggleButton = document.getElementById('sidebarToggleButton');
+        const toggleIcon = document.getElementById('toggleIcon');
+
+        // Added console logs for debugging the toggle
+        console.log('Sidebar element:', sidebar);
+        console.log('Main Content element:', mainContent);
+        console.log('Toggle Button element:', toggleButton);
+        console.log('Toggle Icon element:', toggleIcon);
+
+        if (toggleButton && sidebar && mainContent && toggleIcon) { // Ensure all elements exist
+            toggleButton.addEventListener('click', () => {
+                console.log('Toggle button clicked!'); // Log click event
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('shifted');
+                if (sidebar.classList.contains('collapsed')) {
+                    toggleIcon.classList.remove('fa-chevron-left');
+                    toggleIcon.classList.add('fa-chevron-right');
+                } else {
+                    toggleIcon.classList.remove('fa-chevron-right');
+                    toggleIcon.classList.add('fa-chevron-left');
+                }
+            });
+        } else {
+            console.error('One or more toggle elements not found (IDs: farmerSidebar, mainContent, sidebarToggleButton, toggleIcon). Sidebar toggle will not work. Check your HTML IDs.');
+        }
+
+        // Function to display messages in the farmer mapping section
+        function showFarmerMappingMessage(message, type = 'success') {
+            const messageBox = document.getElementById('mapping-message-farmer');
+            messageBox.textContent = message;
+            messageBox.className = `mt-4 p-3 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+
+        // Function to fetch and display current user's data (username and farmer_profile_id)
+        // Returns true if farmer_profile_id is successfully retrieved, false otherwise
+        async function fetchAndDisplayUserData() {
+            const welcomeMessageElement = document.getElementById('welcomeMessage');
+            const csrftoken = getCookie('csrftoken'); 
+
+            try {
+                const response = await fetch(`${API_BASE_URL}users/profile/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    console.log('User Profile API Response:', userData); // Log the full response
+
+                    if (userData && userData.username) {
+                        welcomeMessageElement.textContent = `Welcome, Farmer ${userData.username}!`;
+                        if (userData.farmer_profile_id) {
+                            currentFarmerProfileId = userData.farmer_profile_id; // Set global ID
+                            console.log('Logged-in Farmer Profile ID:', currentFarmerProfileId);
+                            return true; // Indicate success and ID is set
+                        } else {
+                            console.warn('Farmer profile ID not found in User Profile API response. Please ensure your UserProfileSerializer exposes "farmer_profile_id" for farmer users.');
+                            welcomeMessageElement.textContent = `Welcome, ${userData.username}! (No farm data available)`; // Corrected to use available username
+                            return false;
+                        }
+                    } else {
+                        console.warn('User data or username not found in profile response. Check backend response structure and ensure the user is logged in.');
+                        welcomeMessageElement.textContent = `Welcome, Fellow Farmer!`;
+                        return false;
+                    }
+                } else if (response.status === 401 || response.status === 403) {
+                    console.warn('Not authenticated or unauthorized. Displaying generic welcome. Consider redirecting to login.');
+                    welcomeMessageElement.textContent = `Welcome, Fellow Farmer! (Please log in)`;
+                    return false;
+                }
+                else {
+                    console.error(`Failed to fetch user profile: Status ${response.status} - ${response.statusText}`);
+                    welcomeMessageElement.textContent = `Welcome, Soilgenie User!`;
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching user profile: Network error. Please ensure your Django backend server is running and accessible (e.g., http://127.0.0.1:8000/api/users/profile/).', error);
+                welcomeMessageElement.textContent = `Welcome, Soilgenie User! (Could not load your name - check server)`;
+                return false;
+            }
+        }
+
+        // Function to fetch and display dashboard metrics and recommendations
+        async function fetchDashboardData() {
+            const csrftoken = getCookie('csrftoken'); 
+
+            // --- Fetch Farmlands Data for Total Area Mapped ---
+            try {
+                const response = await fetch(`${API_BASE_URL}farmlands/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    }
+                });
+
+                if (response.ok) {
+                    const farmlands = await response.json();
+                    let totalArea = 0;
+                    // Filter farmlands by the logged-in farmer if currentFarmerProfileId is available
+                    // Ensure currentFarmerProfileId is compared against a consistent field in farmland objects.
+                    // Assumes farmland object has a 'farmer_id' field that matches FarmerProfile.pk
+                    const relevantFarmlands = farmlands.filter(farm => farm.farmer === currentFarmerProfileId); // Changed farm.farmer_id to farm.farmer to match serializer output
+
+                    relevantFarmlands.forEach(farm => {
+                        totalArea += farm.area_hectares || 0;
+                    });
+                    document.getElementById('totalAreaMappedValue').textContent = `${totalArea.toFixed(1)} Hectares`;
+
+                    // Placeholder for other metrics: These would come from separate, more complex APIs
+                    // related to actual farm data (sensors, satellite imagery analysis).
+                    // For now, they remain static.
+                    document.getElementById('overallCropHealthValue').textContent = '0.85'; // Static placeholder
+                    document.getElementById('avgSoilMoistureValue').textContent = '65%'; // Static placeholder
+                    document.getElementById('estimatedYieldValue').textContent = '5.2 tons/acre'; // Static placeholder
+
+                } else {
+                    console.error('Failed to fetch farmlands:', response.status, response.statusText);
+                    document.getElementById('totalAreaMappedValue').textContent = 'N/A'; // Show N/A on error
+                }
+            } catch (error) {
+                console.error('Error fetching farmlands: Network error, ensure Django backend farms API is accessible.', error);
+                document.getElementById('totalAreaMappedValue').textContent = 'N/A';
+            }
+
+            // --- Fetch Recommendations Data ---
+            try {
+                const response = await fetch(`${API_BASE_URL}recommendations/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    }
+                });
+
+                if (response.ok) {
+                    const recommendations = await response.json();
+                    const recommendationsList = document.getElementById('recommendationsList');
+                    recommendationsList.innerHTML = ''; // Clear existing placeholders
+
+                    // Filter recommendations by the logged-in farmer's profile ID
+                    // This assumes the recommendations API returns a `farmland_id` field
+                    // and that `farmland_id` can be used to link back to the currentFarmerProfileId
+                    // (i.e., Farmland.farmer is what we're comparing against).
+                    const filteredRecommendations = recommendations.filter(rec => 
+                        rec.farmland && rec.farmland === currentFarmerProfileId // Changed rec.farmland_id to rec.farmland
+                    );
+
+                    if (filteredRecommendations.length > 0) {
+                        filteredRecommendations.forEach(rec => {
+                            const listItem = document.createElement('li');
+                            // Use recommendation_type and recommendation_text for display
+                            listItem.innerHTML = `<strong>${rec.recommendation_type}:</strong> ${rec.recommendation_text}`;
+                            recommendationsList.appendChild(listItem);
+                        });
+                    } else {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = 'No new recommendations at this time.';
+                        recommendationsList.appendChild(listItem);
+                    }
+                } else {
+                    console.error('Failed to fetch recommendations:', response.status, response.statusText);
+                    document.getElementById('recommendationsList').innerHTML = '<li>Error loading recommendations.</li>';
+                }
+            } catch (error) {
+                console.error('Error fetching recommendations: Network error, ensure Django backend recommendations API is accessible.', error);
+                document.getElementById('recommendationsList').innerHTML = '<li>Network error loading recommendations.</li>';
+            }
+        }
+
+        // --- Handle Farmer's Farmland Mapping Form Submission ---
+        document.getElementById('farmland-mapping-form-farmer').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+
+            console.log('Attempting farmland submission...'); // New diagnostic log
+            console.log('currentFarmerProfileId at submission:', currentFarmerProfileId); // Crucial diagnostic log
+
+            if (currentFarmerProfileId === null) { // Use strict check for null
+                showFarmerMappingMessage('Error: Farmer profile not loaded. Please log in again.', 'error');
+                console.error('Submission failed: currentFarmerProfileId is null.');
+                return;
+            }
+
+            const farmName = document.getElementById('farm-name-input-farmer').value;
+            const farmLocation = document.getElementById('farm-location-input-farmer').value;
+            const farmArea = document.getElementById('farm-area-input-farmer').value;
+            const cropType = document.getElementById('crop-type-input-farmer').value;
+            const farmNotes = document.getElementById('farm-notes-farmer').value;
+            
+            if (!farmLocation || !farmArea || !cropType) {
+                showFarmerMappingMessage('Please fill in all required fields: Location, Area, and Crop Type.', 'error');
+                return;
+            }
+
+            const formData = {
+                farmer: currentFarmerProfileId,
+                farm_name: farmName,
+                location_detail: farmLocation,
+                area_hectares: parseFloat(farmArea),
+                intended_crop_type: cropType,
+                notes: farmNotes
+            };
+
+            console.log('Sending formData:', formData); // Log the formData being sent
+
+            const csrftoken = getCookie('csrftoken');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}farmlands/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // Status codes 200-299
+                    showFarmerMappingMessage(data.message || 'Your farmland has been submitted successfully!');
+                    this.reset(); // Clear the form
+                    // Re-fetch dashboard data to update total area
+                    fetchDashboardData(); 
+                } else {
+                    // Log the full backend error response
+                    console.error('Backend error response:', data); 
+                    let errorMessage = data.message || 'Failed to submit your farmland.';
+                    
+                    // --- IMPROVED ERROR PARSING HERE ---
+                    if (data.detail) {
+                        errorMessage = data.detail;
+                    } else if (data.farmer) { // If 'farmer' is a string or array
+                        errorMessage = `Farmer field error: ${Array.isArray(data.farmer) ? data.farmer.join(', ') : data.farmer}`;
+                    } else if (data.non_field_errors) {
+                        errorMessage += ` ${data.non_field_errors.join(', ')}`;
+                    }
+                    // --- END IMPROVED ERROR PARSING ---
+
+                    showFarmerMappingMessage(errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('Network error during farmland submission:', error);
+                // Corrected: use showFarmerMappingMessage instead of showMessage
+                showFarmerMappingMessage('Network error or server unreachable. Please try again.', 'error');
+            }
+        });
+
+
+        // Function to simulate sending message and receiving AI response
+        async function sendQuestionToAI() {
+            const input = document.getElementById('aiQuestionInput');
+            const chatHistory = document.getElementById('chatHistory');
+            const question = input.value.trim();
+
+            if (question === "") return;
+
+            // Display user's message
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'user-message';
+            userMsgDiv.textContent = `You: ${question}`;
+            chatHistory.appendChild(userMsgDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight; // Scroll to bottom
+
+            input.value = ''; // Clear input
+
+            // Show a loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'ai-message text-gray-500 italic';
+            loadingDiv.textContent = 'Soilgenie is thinking...';
+            chatHistory.appendChild(loadingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // --- Gemini API Call ---
+            let chatHistoryArray = [{ role: "user", parts: [{ text: question }] }];
+            const payload = { contents: chatHistoryArray };
+            const apiKey = ""; // Canvas will provide this at runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                // Remove loading indicator
+                chatHistory.removeChild(loadingDiv);
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+                    const aiMsgDiv = document.createElement('div');
+                    aiMsgDiv.className = 'ai-message';
+                    aiMsgDiv.textContent = `Soilgenie: ${aiResponseText}`;
+                    chatHistory.appendChild(aiMsgDiv);
+                } else {
+                    const errorMsgDiv = document.createElement('div');
+                    errorMsgDiv.className = 'ai-message text-red-600';
+                    errorMsgDiv.textContent = 'Soilgenie: Sorry, I could not generate a response. Please try again.';
+                    chatHistory.appendChild(errorMsgDiv);
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                chatHistory.removeChild(loadingDiv);
+                const errorMsgDiv = document.createElement('div');
+                errorMsgDiv.className = 'ai-message text-red-600';
+                errorMsgDiv.textContent = 'Soilgenie: There was an error connecting to the AI. Please check your internet connection and try again.';
+                chatHistory.appendChild(errorMsgDiv);
+            }
+            chatHistory.scrollTop = chatHistory.scrollHeight; // Scroll to bottom after AI response
+        }
+
+        document.getElementById('sendAiQuestion').addEventListener('click', sendQuestionToAI);
+        document.getElementById('aiQuestionInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendQuestionToAI();
+            }
+        });
+
+        // Add toggle functionality for SMS notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            const smsToggle = document.getElementById('smsToggle');
+            const smsContentPreferences = document.querySelector('#sms-settings-section .mt-4'); // Container for checkboxes
+
+            // Initial state based on checkbox
+            smsContentPreferences.style.display = smsToggle.checked ? 'grid' : 'none';
+
+            smsToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    smsContentPreferences.style.display = 'grid'; // Show preferences
+                } else {
+                    smsContentPreferences.style.display = 'none'; // Hide preferences
+                }
+            });
+
+            // Initialize dashboard data fetching after user data is available
+            initializeDashboard();
+        });
+
+        // New function to orchestrate data loading
+        async function initializeDashboard() {
+            // Step 1: Fetch and display user data (sets currentFarmerProfileId)
+            const userDataSuccess = await fetchAndDisplayUserData();
+
+            // Step 2: If user data was successful and we have a farmer_profile_id, fetch dashboard content
+            if (userDataSuccess && currentFarmerProfileId !== null) {
+                await fetchDashboardData();
+            } else {
+                console.warn("Skipping dashboard data fetch: Farmer profile ID not available or user data fetch failed.");
+                // Provide fallback messages for dashboard metrics/recommendations if data cannot be loaded
+                document.getElementById('totalAreaMappedValue').textContent = 'N/A';
+                document.getElementById('recommendationsList').innerHTML = '<li>No recommendations could be loaded (check server connection and login).</li>';
+                document.getElementById('overallCropHealthValue').textContent = 'N/A';
+                document.getElementById('avgSoilMoistureValue').textContent = 'N/A';
+                document.getElementById('estimatedYieldValue').textContent = 'N/A';
+            }
+        }
+    </script>
+</body>
+</html>

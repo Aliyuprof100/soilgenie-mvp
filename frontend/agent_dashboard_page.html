@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - Soilgenie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fcf8; /* Very light green-white */
+            color: #212121; /* Dark grey for readability */
+        }
+        .header-bg {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .dashboard-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .sidebar {
+            background-color: #1a202c; /* Dark grey for agent sidebar */
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-right: 1.5rem; /* Space from main content */
+            min-width: 250px; /* Fixed width sidebar */
+            width: 280px; /* Default width */
+            transition: width 0.3s ease, margin 0.3s ease; /* Smooth transition for width and margin */
+            position: sticky;
+            top: 0;
+            left: 0;
+            height: 100vh; /* Ensure sidebar takes full viewport height */
+            overflow-y: auto; /* Enable scrolling for long content */
+        }
+        .sidebar.collapsed {
+            width: 80px; /* Collapsed width, just enough for icons */
+            min-width: 80px;
+        }
+        .sidebar.collapsed .sidebar-text,
+        .sidebar.collapsed .profile-details h2,
+        .sidebar.collapsed .profile-details p { /* Hide text within links, profile name/location */
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-link {
+            justify-content: center; /* Center icons when text is hidden */
+            padding: 0.75rem 0; /* Adjust padding for icons only */
+        }
+        .sidebar.collapsed .sidebar-link i {
+            margin-right: 0; /* Remove margin when text is hidden */
+        }
+        .sidebar.collapsed .profile-image {
+             margin-bottom: 0; /* Adjust margin for collapsed profile */
+        }
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+        .sidebar .profile-image {
+            margin-bottom: 0.5rem;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            margin-left: 280px; /* Initial margin to offset sidebar width */
+            transition: margin-left 0.3s ease; /* Add transition for smooth shift */
+        }
+        .main-content.shifted {
+            margin-left: 80px; /* Adjusted margin when sidebar is collapsed */
+        }
+
+        .sidebar-toggle-container {
+            position: absolute; /* Position relative to header */
+            top: 1.5rem; /* Align with header content */
+            left: 290px; /* Just outside the expanded sidebar */
+            z-index: 51; /* Above sidebar, below main header content */
+            transition: left 0.3s ease;
+        }
+        .sidebar.collapsed + .main-content .sidebar-toggle-container {
+             left: 90px; /* Adjust position when sidebar collapses */
+        }
+        .sidebar-toggle-button {
+            background-color: #2d3748; /* Darker grey */
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%; /* Make it round */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .sidebar-toggle-button:hover {
+            background-color: #4a5568;
+            transform: scale(1.05);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Blue-500 with opacity */
+        }
+        .btn-action {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1023px) { /* For screens smaller than large (lg) */
+            .sidebar {
+                width: 100%;
+                min-width: unset;
+                height: auto; /* Allow height to adjust */
+                border-radius: 0; /* Remove specific desktop border radius */
+                margin-right: 0;
+                margin-bottom: 1.5rem;
+                position: relative; /* Remove sticky on mobile for better flow */
+            }
+            .sidebar.collapsed {
+                width: 100%; /* Collapse is effectively ignored on mobile for now */
+            }
+            .main-content {
+                margin-left: 0; /* No left margin on mobile */
+                padding: 1.5rem;
+            }
+            .main-content.shifted {
+                margin-left: 0; /* No left margin on mobile even if toggled */
+            }
+            .sidebar-toggle-container {
+                display: none; /* Hide toggle button on small screens for simplicity */
+            }
+            .dashboard-layout {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header/Navigation -->
+    <header class="header-bg p-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="text-3xl font-extrabold text-green-700 font-montserrat">
+                <img src="images/logo 1@300x (1).png" alt="Soilgenie Logo" class="h-10">
+            </div>
+            <nav class="flex items-center space-x-4">
+                <span class="text-gray-700 font-semibold text-lg hidden md:block">Welcome, Agent!</span>
+                <a href="#" class="text-gray-700 hover:text-green-600 font-medium text-lg transition duration-300">
+                    <i class="fas fa-bell"></i> <span class="hidden sm:inline">Alerts</span>
+                </a>
+                <a href="#" class="px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 text-sm font-semibold">
+                    <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">Logout</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area Wrapper -->
+    <div class="flex flex-col lg:flex-row container mx-auto p-6 dashboard-layout">
+        <!-- Sidebar -->
+        <aside id="agentSidebar" class="sidebar">
+            <div class="text-center mb-8">
+                <img src="https://placehold.co/100x100/3b82f6/ffffff?text=A" alt="Agent Profile" class="rounded-full mx-auto border-4 border-blue-300 mb-3 profile-image">
+                <div class="profile-details">
+                    <h2 class="text-xl font-bold">Agent Jane Smith</h2>
+                    <p class="text-blue-200">Kaduna State, Nigeria</p>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#overview" class="sidebar-link active bg-gray-700"><i class="fas fa-chart-line"></i> <span class="sidebar-text">Dashboard Overview</span></a></li>
+                    <li><a href="#my-farmers" class="sidebar-link"><i class="fas fa-users"></i> <span class="sidebar-text">My Farmers</span></a></li>
+                    <li><a href="#map-new-farmland" class="sidebar-link"><i class="fas fa-map-pin"></i> <span class="sidebar-text">Map New Farmland</span></a></li>
+                    <li><a href="#tasks" class="sidebar-link"><i class="fas fa-tasks"></i> <span class="sidebar-text">Pending Tasks</span></a></li>
+                    <li><a href="#messages" class="sidebar-link"><i class="fas fa-comments"></i> <span class="sidebar-text">Messages</span></a></li>
+                    <li><a href="#weather-trends" class="sidebar-link"><i class="fas fa-cloud-sun-rain"></i> <span class="sidebar-text">Weather Trends</span></a></li>
+                    <li><a href="#farmer-maps" class="sidebar-link"><i class="fas fa-map-marked-alt"></i> <span class="sidebar-text">Farmer Maps</span></a></li>
+                    <li><a href="#ai-insights-tool" class="sidebar-link"><i class="fas fa-robot"></i> <span class="sidebar-text">AI Insights Tool</span></a></li>
+                    <li><a href="#recommendations-overview" class="sidebar-link"><i class="fas fa-lightbulb"></i> <span class="sidebar-text">Recommendations Overview</span></a></li>
+                    <li><a href="#enhanced-reporting" class="sidebar-link"><i class="fas fa-chart-pie"></i> <span class="sidebar-text">Enhanced Reporting</span></a></li>
+                    <li><a href="#knowledge-base" class="sidebar-link"><i class="fas fa-book"></i> <span class="sidebar-text">Knowledge Base</span></a></li>
+                    <li><a href="#appointment-scheduler" class="sidebar-link"><i class="fas fa-calendar-alt"></i> <span class="sidebar-text">Appointment Scheduler</span></a></li>
+                    <li><a href="#reports" class="sidebar-link"><i class="fas fa-file-alt"></i> <span class="sidebar-text">Field Reports</span></a></li>
+                    <li><a href="#" class="sidebar-link"><i class="fas fa-cog"></i> <span class="sidebar-text">Settings</span></a></li>
+                    <li><a href="index.html" class="sidebar-link text-red-300 hover:bg-red-700"><i class="fas fa-home"></i> <span class="sidebar-text">Back to Home</span></a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Sidebar Toggle Button (moved inside the flex container for positioning) -->
+        <!-- For larger screens, this positions the toggle next to the sidebar -->
+        <div class="sidebar-toggle-container hidden lg:block">
+            <button id="sidebarToggleButton" class="sidebar-toggle-button">
+                <i class="fas fa-chevron-left" id="toggleIcon"></i>
+            </button>
+        </div>
+
+        <!-- Main Dashboard Content -->
+        <main id="mainContent" class="flex-1 space-y-6 main-content">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-8 font-montserrat">Welcome, Agent Jane Smith!</h1>
+            <p class="text-lg text-gray-600 mb-8">Your command center for empowering farmers with Soilgenie insights.</p>
+
+            <section id="overview" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Agent Overview</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 bg-blue-50 rounded-lg flex items-center">
+                        <i class="fas fa-users text-blue-600 text-3xl mr-3"></i>
+                        <div>
+                            <p class="text-gray-600 text-sm">Assigned Farmers</p>
+                            <p class="text-xl font-bold">45</p>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-orange-50 rounded-lg flex items-center">
+                        <i class="fas fa-clipboard-list text-orange-600 text-3xl mr-3"></i>
+                        <div>
+                            <p class="text-gray-600 text-sm">Pending Tasks</p>
+                            <p class="text-xl font-bold">7</p>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-lg flex items-center">
+                        <i class="fas fa-comment-dots text-green-600 text-3xl mr-3"></i>
+                        <div>
+                            <p class="text-gray-600 text-sm">New Messages</p>
+                            <p class="text-xl font-bold">3</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="my-farmers" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">My Farmers</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-md">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Farmer Name</th>
+                                <th class="py-3 px-6 text-left">Location</th>
+                                <th class="py-3 px-6 text-left">Last Contact</th>
+                                <th class="py-3 px-6 text-center">Status</th>
+                                <th class="py-3 px-6 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700 text-sm font-light">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-6 text-left whitespace-nowrap">Aisha K.</td>
+                                <td class="py-3 px-6 text-left">Kano, Dawakin Tofa</td>
+                                <td class="py-3 px-6 text-left">2 days ago</td>
+                                <td class="py-3 px-6 text-center"><span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Active</span></td>
+                                <td class="py-3 px-6 text-center">
+                                    <button class="bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">View</button>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-6 text-left whitespace-nowrap">Emeka O.</td>
+                                <td class="py-3 px-6 text-left">Niger, Lapai</td>
+                                <td class="py-3 px-6 text-left">5 days ago</td>
+                                <td class="py-3 px-6 text-center"><span class="bg-yellow-200 text-yellow-600 py-1 px-3 rounded-full text-xs">Needs Check-in</span></td>
+                                <td class="py-3 px-6 text-center">
+                                    <button class="bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">View</button>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-6 text-left whitespace-nowrap">Fatima Y.</td>
+                                <td class="py-3 px-6 text-left">Kaduna, Igabi</td>
+                                <td class="py-3 px-6 text-center"><span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Active</span></td>
+                                <td class="py-3 px-6 text-center">
+                                    <button class="bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">View</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Map New Farmland Section -->
+            <section id="map-new-farmland" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Map New Farmland</h3>
+                <p class="text-gray-600 mb-4">Assist farmers in mapping their land and specifying crop details.</p>
+                <form id="farmland-mapping-form" class="space-y-4">
+                    <div>
+                        <label for="farmer-select-map" class="block text-left text-gray-700 font-medium mb-1">Select Farmer</label>
+                        <select id="farmer-select-map" class="form-input" required>
+                            <option value="">-- Fetching Farmers... --</option>
+                        </select>
+                    </div>
+                    <div id="new-farmer-details" class="hidden space-y-4">
+                        <label class="block text-left text-gray-700 font-medium text-sm">New Farmer Details:</label>
+                        <input type="text" id="new-farmer-fullname" class="form-input" placeholder="New Farmer's Full Name" disabled>
+                        <input type="email" id="new-farmer-email" class="form-input" placeholder="New Farmer's Email" disabled>
+                        <input type="tel" id="new-farmer-phone" class="form-input" placeholder="New Farmer's Phone" disabled>
+                        <input type="text" id="new-farmer-location" class="form-input" placeholder="New Farmer's Location" disabled>
+                    </div>
+                    <div>
+                        <label for="farm-name-input" class="block text-left text-gray-700 font-medium mb-1">Farm Name (Optional)</label>
+                        <input type="text" id="farm-name-input" class="form-input" placeholder="e.g., Main Maize Field">
+                    </div>
+                    <div>
+                        <label for="farm-location-input" class="block text-left text-gray-700 font-medium mb-1">Farm Location (State, LGA, Village)</label>
+                        <input type="text" id="farm-location-input" class="form-input" placeholder="e.g., Kaduna, Zaria, Tudun Wada" required>
+                    </div>
+                    <div>
+                        <label for="farm-area-input" class="block text-left text-gray-700 font-medium mb-1">Approximate Farm Area (in Hectares)</label>
+                        <input type="number" id="farm-area-input" class="form-input" placeholder="e.g., 5" min="0.1" step="0.1" required>
+                    </div>
+                    <div>
+                        <label for="crop-type-input" class="block text-left text-gray-700 font-medium mb-1">Intended Crop Type</label>
+                        <select id="crop-type-input" class="form-input" required>
+                            <option value="">-- Select Crop --</option>
+                            <option value="Maize">Maize</option>
+                            <option value="Rice">Rice</option>
+                            <option value="Cassava">Cassava</option>
+                            <option value="Yam">Yam</option>
+                            <option value="Sorghum">Sorghum</option>
+                            <option value="Millet">Millet</option>
+                            <option value="Vegetables">Vegetables (e.g., Tomatoes, Pepper)</option>
+                            <option value="Cocoa">Cocoa</option>
+                            <option value="Other">Other (specify in notes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="farm-notes" class="block text-left text-gray-700 font-medium mb-1">Additional Notes (e.g., specific boundaries, challenges)</label>
+                        <textarea id="farm-notes" rows="3" class="form-input" placeholder="Any specific details about the farm or mapping..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold text-lg btn-action hover:bg-blue-700 shadow-md">
+                        <i class="fas fa-plus-circle mr-2"></i> Submit Farmland for Mapping
+                    </button>
+                </form>
+                <div id="mapping-message" class="mt-4 p-3 rounded-lg hidden"></div>
+            </section>
+            
+            <section id="tasks" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Pending Tasks</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-start bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-check-circle text-orange-500 text-xl mr-3 mt-1"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Follow up with Emeka O. regarding irrigation issues (due today)</p>
+                            <p class="text-gray-600 text-sm">Last update: Needs field visit confirmation.</p>
+                        </div>
+                        <button class="ml-auto bg-orange-500 text-white py-1 px-3 rounded-md text-xs hover:bg-orange-600">Complete</button>
+                    </li>
+                    <li class="flex items-start bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-check-circle text-orange-500 text-xl mr-3 mt-1"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Schedule soil test for new farmer in Katsina (due in 3 days)</p>
+                            <p class="text-gray-600 text-sm">Farmer name: Abubakar S.</p>
+                        </div>
+                        <button class="ml-auto bg-orange-500 text-white py-1 px-3 rounded-md text-xs hover:bg-orange-600">Complete</button>
+                    </li>
+                </ul>
+            </section>
+
+            <section id="messages" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Recent Messages</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-start bg-blue-50 p-3 rounded-lg">
+                        <img src="https://placehold.co/40x40/d1d5db/374151?text=AI" alt="Aisha K." class="rounded-full mr-3 mt-1">
+                        <div>
+                            <p class="font-semibold text-gray-800">Aisha K. (Farmer)</p>
+                            <p class="text-gray-600 text-sm">"My maize leaves are turning yellow, what should I do?"</p>
+                            <p class="text-gray-500 text-xs mt-1">5 minutes ago</p>
+                        </div>
+                        <button class="ml-auto bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">Reply</button>
+                    </li>
+                    <li class="flex items-start bg-blue-50 p-3 rounded-lg">
+                        <img src="https://placehold.co/40x40/d1d5db/374151?text=EM" alt="Emeka O." class="rounded-full mr-3 mt-1">
+                        <div>
+                            <p class="font-semibold text-gray-800">Emeka O. (Farmer)</p>
+                            <p class="text-gray-600 text-sm">"I received the new fertilizer recommendation. Thanks!"</p>
+                            <p class="text-gray-500 text-xs mt-1">Yesterday</p>
+                        </div>
+                        <button class="ml-auto bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">View Chat</button>
+                    </li>
+                </ul>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <section id="weather-trends" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Weather Trends & Alerts (Service Area)</h3>
+                <p class="text-gray-600 mb-4">View localized weather patterns and alerts to advise farmers effectively.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-purple-50 rounded-lg">
+                        <p class="font-semibold text-gray-700 mb-2">Next 7 Days Forecast</p>
+                        <i class="fas fa-cloud-sun-rain text-4xl text-purple-600 mb-2"></i>
+                        <p class="text-lg font-bold">Varied with high chance of rain mid-week.</p>
+                        <p class="text-gray-600 text-sm">Average Temp: 28-33°C. Humidity: 70-90%.</p>
+                    </div>
+                    <div class="p-4 bg-red-50 rounded-lg">
+                        <p class="font-semibold text-gray-700 mb-2">Critical Weather Alerts</p>
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-600 mb-2"></i>
+                        <p class="text-lg font-bold">Flash Flood Warning: Northern LGAs (Aug 12-14)</p>
+                        <p class="text-gray-600 text-sm">Advise farmers in affected areas on drainage and crop protection.</p>
+                    </div>
+                </div>
+                <button class="mt-4 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 btn-action">View Detailed Weather</button>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <section id="farmer-maps" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Farmer Maps & Field Insights</h3>
+                <p class="text-gray-600 mb-4">Access detailed satellite maps and health reports for your assigned farmers' lands.</p>
+                <ul class="space-y-3">
+                    <li class="flex items-center bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-map-marked-alt text-green-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Aisha K.'s Maize Farm (Kano)</p>
+                            <p class="text-gray-600 text-sm">Last NDVI Update: Yesterday (Minor stress detected in Sector B)</p>
+                        </div>
+                        <button class="ml-auto bg-green-500 text-white py-1 px-3 rounded-md text-xs hover:bg-green-600 btn-action">View Map</button>
+                    </li>
+                    <li class="flex items-center bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-map-marked-alt text-blue-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Emeka O.'s Rice Paddocks (Niger)</p>
+                            <p class="text-gray-600 text-sm">Last Moisture Update: 3 days ago (Optimal levels)</p>
+                        </div>
+                        <button class="ml-auto bg-green-500 text-white py-1 px-3 rounded-md text-xs hover:bg-green-600 btn-action">View Map</button>
+                    </li>
+                </ul>
+                <button class="mt-4 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 btn-action">Browse All Farmer Maps</button>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <section id="ai-insights-tool" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">AI Insights Tool for Farmers</h3>
+                <p class="text-gray-600 mb-4">Generate and explain AI-driven recommendations based on a farmer's specific data.</p>
+                <div class="mb-4">
+                    <label for="farmer-select" class="block text-left text-gray-700 font-medium mb-1">Select Farmer:</label>
+                    <select id="farmer-select" class="form-input">
+                        <option value="">-- Choose a Farmer --</option>
+                        <option value="aisha-k">Aisha K. (Maize)</option>
+                        <option value="emeka-o">Emeka O. (Rice)</option>
+                        <option value="fatima-y">Fatima Y. (Vegetables)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="query-type" class="block text-left text-gray-700 font-medium mb-1">Select Query Type:</label>
+                    <select id="query-type" class="form-input">
+                        <option value="">-- Select Insight Type --</option>
+                        <option value="soil-health">Soil Health Recommendation</option>
+                        <option value="crop-disease">Crop Disease Diagnosis</option>
+                        <option value="irrigation-advice">Irrigation Advice</option>
+                        <option value="yield-forecast">Yield Forecast</option>
+                    </select>
+                </div>
+                <button class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 btn-action" id="generateAiInsight">Generate AI Insight</button>
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left hidden" id="ai-result">
+                    <p class="font-semibold text-blue-800">AI Generated Insight:</p>
+                    <p class="text-gray-700">**For Aisha K. (Maize, Soil Health):** Based on the latest soil nutrient levels, we recommend a targeted application of Urea (46-0-0) at a rate of 1 bag per hectare, primarily in the northern section of her farm. This will address the observed nitrogen deficiency. Advise her to apply early morning or late afternoon.</p>
+                </div>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <section id="recommendations-overview" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Recommendations Overview for Farmers</h3>
+                <p class="text-gray-600 mb-4">Track all active and pending recommendations issued to your assigned farmers.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-md">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Farmer</th>
+                                <th class="py-3 px-6 text-left">Recommendation Type</th>
+                                <th class="py-3 px-6 text-left">Date Issued</th>
+                                <th class="py-3 px-6 text-center">Status</th>
+                                <th class="py-3 px-6 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700 text-sm font-light">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-6 text-left">Aisha K.</td>
+                                <td class="py-3 px-6 text-left">Fertilizer Application</td>
+                                <td class="py-3 px-6 text-left">Aug 9, 2025</td>
+                                <td class="py-3 px-6 text-center"><span class="bg-yellow-200 text-yellow-600 py-1 px-3 rounded-full text-xs">Pending Follow-up</span></td>
+                                <td class="py-3 px-6 text-center">
+                                    <button class="bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">View Details</button>
+                                </td>
+                            </tr>
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-6 text-left whitespace-nowrap">Emeka O.</td>
+                                <td class="py-3 px-6 text-left">Irrigation Adjustment</td>
+                                <td class="py-3 px-6 text-left">Aug 7, 2025</td>
+                                <td class="py-3 px-6 text-center"><span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Completed</span></td>
+                                <td class="py-3 px-6 text-center">
+                                    <button class="bg-blue-500 text-white py-1 px-3 rounded-md text-xs hover:bg-blue-600">View Details</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button class="mt-4 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 btn-action">View All Recommendations</button>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <!-- New: Enhanced Reporting Section -->
+            <section id="enhanced-reporting" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Enhanced Reporting</h3>
+                <p class="text-gray-600 mb-4">Generate comprehensive reports on farmer progress, yield trends, and regional insights.</p>
+                <form id="report-generation-form" class="space-y-4">
+                    <div>
+                        <label for="report-type" class="block text-left text-gray-700 font-medium mb-1">Report Type:</label>
+                        <select id="report-type" class="form-input" required>
+                            <option value="">-- Select Report Type --</option>
+                            <option value="farmer-performance">Individual Farmer Performance</option>
+                            <option value="region-summary">Regional Summary</option>
+                            <option value="crop-yield-trend">Crop Yield Trends</option>
+                            <option value="impact-assessment">Agent Impact Assessment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="report-period" class="block text-left text-gray-700 font-medium mb-1">Time Period:</label>
+                        <select id="report-period" class="form-input" required>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="annually">Annually</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold text-lg btn-action hover:bg-indigo-700 shadow-md">
+                        <i class="fas fa-chart-line mr-2"></i> Generate Report
+                    </button>
+                </form>
+                <div id="report-output" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg text-left hidden">
+                    <p class="font-semibold text-gray-800">Report Generated:</p>
+                    <p class="text-gray-700">A detailed report will be compiled and made available for download shortly. (This is a placeholder for backend functionality.)</p>
+                </div>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <!-- New: Knowledge Base/Resource Center -->
+            <section id="knowledge-base" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Knowledge Base / Resource Center</h3>
+                <p class="text-gray-600 mb-4">Access articles, guides, and best practices to support farmers and enhance your expertise.</p>
+                <div class="space-y-3">
+                    <a href="#" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                        <i class="fas fa-book-open text-blue-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Guide: Common Maize Diseases in Nigeria</p>
+                            <p class="text-gray-600 text-sm">Symptoms, prevention, and treatment strategies.</p>
+                        </div>
+                    </a>
+                    <a href="#" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                        <i class="fas fa-hand-holding-water text-green-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Best Practices for Irrigation in Dry Season</p>
+                            <p class="text-gray-600 text-sm">Water-saving techniques and optimal schedules.</p>
+                        </div>
+                    </a>
+                    <a href="#" class="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 flex items-center">
+                        <i class="fas fa-flask text-purple-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Understanding Soil pH: A Farmer's Guide</p>
+                            <p class="text-gray-600 text-sm">Impact on nutrient availability and crop growth.</p>
+                        </div>
+                    </a>
+                </div>
+                <button class="mt-4 w-full py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 btn-action">Browse All Resources</button>
+            </section>
+
+            <hr class="my-6 border-gray-200">
+
+            <!-- New: Appointment/Visit Scheduler -->
+            <section id="appointment-scheduler" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Appointment / Visit Scheduler</h3>
+                <p class="text-gray-600 mb-4">Manage your field visits and appointments with farmers efficiently.</p>
+                <form id="schedule-form" class="space-y-4">
+                    <div>
+                        <label for="appt-farmer-select" class="block text-left text-gray-700 font-medium mb-1">Farmer:</label>
+                        <select id="appt-farmer-select" class="form-input" required>
+                            <option value="">-- Select Farmer --</option>
+                            <option value="Aisha K.">Aisha K.</option>
+                            <option value="Emeka O.">Emeka O.</option>
+                            <option value="Fatima Y.">Fatima Y.</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="appt-date" class="block text-left text-gray-700 font-medium mb-1">Date:</label>
+                        <input type="date" id="appt-date" class="form-input" required>
+                    </div>
+                    <div>
+                        <label for="appt-time" class="block text-left text-gray-700 font-medium mb-1">Time:</label>
+                        <input type="time" id="appt-time" class="form-input" required>
+                    </div>
+                    <div>
+                        <label for="appt-purpose" class="block text-left text-gray-700 font-medium mb-1">Purpose of Visit:</label>
+                        <textarea id="appt-purpose" rows="2" class="form-input" placeholder="e.g., Soil sample collection, Discuss irrigation, Onboarding"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-green-600 text-white rounded-lg font-semibold text-lg btn-action hover:bg-green-700 shadow-md">
+                        <i class="fas fa-calendar-plus mr-2"></i> Schedule Appointment
+                    </button>
+                </form>
+                <div id="schedule-success-message" class="mt-4 p-3 bg-green-100 text-green-700 rounded-lg hidden">
+                    Appointment scheduled successfully!
+                </div>
+
+                <h4 class="text-lg font-semibold text-gray-800 mt-8 mb-4">Upcoming Appointments:</h4>
+                <ul class="space-y-3">
+                    <li class="flex items-center bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-calendar-check text-blue-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Visit to Aisha K. - Aug 15, 2025 at 10:00 AM</p>
+                            <p class="text-gray-600 text-sm">Purpose: Discuss fertilizer application for maize.</p>
+                        </div>
+                        <button class="ml-auto bg-red-500 text-white py-1 px-3 rounded-md text-xs hover:bg-red-600">Cancel</button>
+                    </li>
+                    <li class="flex items-center bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-calendar-check text-blue-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Visit to Emeka O. - Aug 18, 2025 at 2:00 PM</p>
+                            <p class="text-gray-600 text-sm">Purpose: Field check for new rice paddocks.</p>
+                        </div>
+                        <button class="ml-auto bg-red-500 text-white py-1 px-3 rounded-md text-xs hover:bg-red-600">Cancel</button>
+                    </li>
+                </ul>
+            </section>
+
+            <section id="reports" class="dashboard-card">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Field Reports</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-center bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-file-alt text-gray-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Visit Report: Farmer Aisha K. (Aug 8, 2025)</p>
+                            <p class="text-gray-600 text-sm">Discussed maize yellowing, provided initial advice.</p>
+                        </div>
+                        <button class="ml-auto bg-gray-600 text-white py-1 px-3 rounded-md text-xs hover:bg-gray-700">View</button>
+                    </li>
+                    <li class="flex items-center bg-gray-50 p-3 rounded-lg">
+                        <i class="fas fa-file-alt text-gray-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">Soil Sample Collection: Abubakar S. (Aug 6, 2025)</p>
+                            <p class="text-gray-600 text-sm">Collected samples for laboratory analysis.</p>
+                        </div>
+                        <button class="ml-auto bg-gray-600 text-white py-1 px-3 rounded-md text-xs hover:bg-gray-700">View</button>
+                    </li>
+                </ul>
+                <button class="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 btn-action">Create New Report</button>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/'; // Your Django backend API base URL
+
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Smooth scrolling for sidebar links
+        document.querySelectorAll('.sidebar-link').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active', 'bg-gray-700'));
+                this.classList.add('active', 'bg-gray-700');
+                const targetId = this.getAttribute('href');
+                document.querySelector(targetId).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Toggle sidebar collapse functionality
+        const sidebar = document.getElementById('agentSidebar');
+        const mainContent = document.getElementById('mainContent');
+        const toggleButton = document.getElementById('sidebarToggleButton');
+        const toggleIcon = document.getElementById('toggleIcon');
+
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('shifted');
+                if (sidebar.classList.contains('collapsed')) {
+                    toggleIcon.classList.remove('fa-chevron-left');
+                    toggleIcon.classList.add('fa-chevron-right');
+                } else {
+                    toggleIcon.classList.remove('fa-chevron-right');
+                    toggleIcon.classList.add('fa-chevron-left');
+                }
+            });
+        }
+
+        // Function to display messages in the mapping section
+        function showMappingMessage(message, type = 'success') {
+            const messageBox = document.getElementById('mapping-message');
+            messageBox.textContent = message;
+            messageBox.className = `mt-4 p-3 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+        // --- Fetch and Populate Farmers for Farmland Mapping Form ---
+        async function fetchFarmersForMappingForm() {
+            const farmerSelect = document.getElementById('farmer-select-map');
+            farmerSelect.innerHTML = '<option value="">-- Loading Farmers... --</option>'; // Loading state
+            const csrftoken = getCookie('csrftoken');
+
+            try {
+                // Fetch all farmer profiles (or a filtered list if agent has assigned farmers)
+                const response = await fetch(`${API_BASE_URL}users/farmers/`, { // Assuming an API for listing farmers
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    }
+                });
+
+                if (response.ok) {
+                    const farmers = await response.json();
+                    farmerSelect.innerHTML = '<option value="">-- Select Farmer --</option>'; // Reset
+                    if (farmers.length > 0) {
+                        farmers.forEach(farmer => {
+                            const option = document.createElement('option');
+                            option.value = farmer.user_id; // Assuming user_id is the PK of the User model
+                            option.textContent = farmer.username; // Display username
+                            farmerSelect.appendChild(option);
+                        });
+                    } else {
+                        farmerSelect.innerHTML = '<option value="">No farmers found.</option>';
+                    }
+                } else {
+                    console.error('Failed to fetch farmers:', response.status, response.statusText);
+                    farmerSelect.innerHTML = '<option value="">Error loading farmers.</option>';
+                    showMappingMessage('Error loading farmer list for mapping. Please check console.', 'error');
+                }
+            } catch (error) {
+                console.error('Network error fetching farmers:', error);
+                farmerSelect.innerHTML = '<option value="">Network error.</option>';
+                showMappingMessage('Network error fetching farmer list. Ensure backend is running.', 'error');
+            }
+        }
+
+
+        // --- Handle Farmland Mapping Form Submission ---
+        document.getElementById('farmland-mapping-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+
+            const farmerSelect = document.getElementById('farmer-select-map');
+            const farmerId = farmerSelect.value;
+            const farmName = document.getElementById('farm-name-input').value; // New: optional farm name
+            const farmLocation = document.getElementById('farm-location-input').value;
+            const farmArea = document.getElementById('farm-area-input').value;
+            const cropType = document.getElementById('crop-type-input').value;
+            const farmNotes = document.getElementById('farm-notes').value;
+            
+            if (!farmerId || !farmLocation || !farmArea || !cropType) {
+                showMappingMessage('Please fill in all required farmland mapping fields (Farmer, Location, Area, Crop Type).', 'error');
+                return;
+            }
+
+            const formData = {
+                farmer_id: farmerId, // This is the FarmerProfile primary key
+                farm_name: farmName,
+                location_detail: farmLocation,
+                area_hectares: parseFloat(farmArea),
+                intended_crop_type: cropType,
+                notes: farmNotes
+            };
+
+            const csrftoken = getCookie('csrftoken');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}farmlands/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // Status codes 200-299
+                    showMappingMessage(data.message || 'Farmland submitted successfully!');
+                    this.reset(); // Clear the form
+                    // Re-fetch farmers to ensure the list is up to date if needed (e.g., if a new farmer was created)
+                    fetchFarmersForMappingForm(); 
+                } else {
+                    let errorMessage = data.message || 'Failed to submit farmland.';
+                    if (data.detail) errorMessage = data.detail;
+                    if (data.farmer_id) errorMessage += ' Farmer ID: ' + data.farmer_id.join(', '); // DRF specific validation error
+                    if (data.non_field_errors) errorMessage += ' ' + data.non_field_errors.join(', ');
+                    showMappingMessage(errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('Error submitting farmland:', error);
+                showMappingMessage('Network error or server unreachable. Please try again.', 'error');
+            }
+        });
+
+
+        // Handle Appointment Scheduler form submission
+        document.getElementById('schedule-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+
+            const apptFarmer = document.getElementById('appt-farmer-select').value;
+            const apptDate = document.getElementById('appt-date').value;
+            const apptTime = document.getElementById('appt-time').value;
+            const apptPurpose = document.getElementById('appt-purpose').value;
+            const successMessageDiv = document.getElementById('schedule-success-message');
+
+            if (!apptFarmer || !apptDate || !apptTime || !apptPurpose) {
+                 // Use a custom modal or message box instead of alert()
+                console.error('Please fill in all appointment scheduling fields.');
+                return;
+            }
+
+            const appointmentData = {
+                farmer_id: apptFarmer, // This would be an ID in a real system
+                appointment_date: apptDate,
+                appointment_time: apptTime,
+                purpose: apptPurpose
+            };
+
+            const csrftoken = getCookie('csrftoken');
+
+            try {
+                // Simulate API call to Django backend for scheduling
+                const response = await fetch(`${API_BASE_URL}agents/appointments/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken 
+                    },
+                    body: JSON.stringify(appointmentData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    successMessageDiv.textContent = data.message || 'Appointment scheduled successfully!';
+                    successMessageDiv.classList.remove('hidden');
+                    successMessageDiv.classList.remove('bg-red-100', 'text-red-700');
+                    successMessageDiv.classList.add('bg-green-100', 'text-green-700');
+                    this.reset(); 
+                } else {
+                    let errorMessage = data.message || 'Failed to schedule appointment.';
+                    if (data.detail) errorMessage = data.detail;
+                    successMessageDiv.textContent = errorMessage;
+                    successMessageDiv.classList.remove('hidden');
+                    successMessageDiv.classList.remove('bg-green-100', 'text-green-700');
+                    successMessageDiv.classList.add('bg-red-100', 'text-red-700');
+                }
+            } catch (error) {
+                console.error('Error scheduling appointment:', error);
+                successMessageDiv.textContent = 'Error connecting to the server. Please try again.';
+                successMessageDiv.classList.remove('hidden');
+                successMessageDiv.classList.remove('bg-green-100', 'text-green-700');
+                successMessageDiv.classList.add('bg-red-100', 'text-red-700');
+            } finally {
+                setTimeout(() => {
+                    successMessageDiv.classList.add('hidden');
+                    // Reset class to green in case it was red
+                    successMessageDiv.classList.remove('bg-red-100', 'text-red-700');
+                    successMessageDiv.classList.add('bg-green-100', 'text-green-700');
+                }, 5000);
+            }
+        });
+
+        // Handle Report Generation form submission
+        document.getElementById('report-generation-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const reportType = document.getElementById('report-type').value;
+            const reportPeriod = document.getElementById('report-period').value;
+            const reportOutputDiv = document.getElementById('report-output');
+            const csrftoken = getCookie('csrftoken');
+
+            if (!reportType || !reportPeriod) {
+                reportOutputDiv.innerHTML = `<p class="font-semibold text-red-600">Please select both report type and time period.</p>`;
+                reportOutputDiv.classList.remove('hidden');
+                reportOutputDiv.classList.remove('bg-gray-50');
+                reportOutputDiv.classList.add('bg-red-100', 'text-red-700');
+                return;
+            }
+
+            const reportData = {
+                report_type: reportType,
+                time_period: reportPeriod
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}agents/reports/generate/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(reportData)
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    reportOutputDiv.innerHTML = `<p class="font-semibold text-gray-800">Report Generation Initiated:</p><p class="text-gray-700">${data.message || 'A detailed report is being compiled and will be available shortly.'}</p>`;
+                    reportOutputDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                    reportOutputDiv.classList.add('bg-green-100');
+                } else {
+                    reportOutputDiv.innerHTML = `<p class="font-semibold text-red-800">Report Generation Failed:</p><p class="text-red-700">` + (data.message || 'Unknown error during generation.') + `</p>`;
+                    reportOutputDiv.classList.remove('hidden', 'bg-green-100');
+                    reportOutputDiv.classList.add('bg-red-100', 'text-red-700');
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                reportOutputDiv.innerHTML = `<p class="font-semibold text-red-800">Error:</p><p class="text-red-700">Error connecting to the server for report generation. Please try again.</p>`;
+                reportOutputDiv.classList.remove('hidden', 'bg-green-100');
+                reportOutputDiv.classList.add('bg-red-100', 'text-red-700');
+            } finally {
+                setTimeout(() => {
+                    reportOutputDiv.classList.add('hidden');
+                    reportOutputDiv.classList.remove('bg-red-100', 'text-red-700');
+                    reportOutputDiv.classList.add('bg-gray-50'); // Reset to default gray
+                }, 7000);
+            }
+        });
+
+
+        // Simple AI Insights Tool placeholder logic (kept as direct Gemini call for Canvas demo)
+        document.getElementById('generateAiInsight').addEventListener('click', async function() {
+            const farmerSelect = document.getElementById('farmer-select');
+            const queryTypeSelect = document.getElementById('query-type');
+            const aiResultDiv = document.getElementById('ai-result');
+
+            const selectedFarmer = farmerSelect.options[farmerSelect.selectedIndex].text;
+            const selectedQueryType = queryTypeSelect.options[queryTypeSelect.selectedIndex].text;
+
+            if (!farmerSelect.value || !queryTypeSelect.value) {
+                aiResultDiv.innerHTML = `<p class="font-semibold text-red-600">Please select both a farmer and an insight type.</p>`;
+                aiResultDiv.classList.remove('hidden');
+                return;
+            }
+
+            const prompt = `Generate a concise agricultural insight for a farmer named ${selectedFarmer} related to ${selectedQueryType}. Make it actionable and relevant to Nigerian farming context.`;
+            
+            aiResultDiv.innerHTML = `<p class="font-semibold text-blue-800">AI Generated Insight:</p><p class="text-gray-700">Generating insight for ${selectedFarmer} related to ${selectedQueryType}...</p>`;
+            aiResultDiv.classList.remove('hidden');
+
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Canvas will provide this at runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+                    aiResultDiv.innerHTML = `<p class="font-semibold text-blue-800">AI Generated Insight:</p><p class="text-gray-700">${aiResponseText}</p>`;
+                } else {
+                    aiResultDiv.innerHTML = `<p class="font-semibold text-red-600">Soilgenie: Sorry, I could not generate a response. Please try again.</p>`;
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                aiResultDiv.innerHTML = `<p class="font-semibold text-red-600">Soilgenie: There was an error connecting to the AI. Please check your internet connection and try again.</p>`;
+            }
+        });
+
+        // --- Execute on DOM Content Loaded ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch and populate the farmer selection dropdown for mapping
+            fetchFarmersForMappingForm(); 
+        });
+    </script>
+</body>
+</html>

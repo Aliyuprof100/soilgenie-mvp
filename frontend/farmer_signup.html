@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Registration - Soilgenie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e0f2f7; /* Light blue/green background */
+            color: #1f2937;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .signup-card {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        .signup-button {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: #22c55e; /* Green */
+            color: white;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+        }
+        .signup-button:hover {
+            background-color: #16a34a; /* Darker green */
+            transform: translateY(-2px);
+        }
+        .link {
+            color: #2563eb; /* Blue for links */
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .link:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+        .message-box {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+        .message-box.success {
+            background-color: #d1fae5; /* Green-100 */
+            color: #065f46; /* Green-800 */
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Red-100 */
+            color: #991b1b; /* Red-800 */
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-card">
+        <h2 class="text-4xl font-bold mb-6 text-green-700">
+            <img src="images/logo 1@300x (1).png" onerror="this.onerror=null;this.src='https://placehold.co/100x100/A7F3D0/065F46?text=SG';" alt="Soilgenie Logo" class="h-12 mx-auto mb-4">
+        </h2>
+        <p class="text-xl mb-6 text-gray-700">Farmer Registration</p>
+        <form id="farmerSignupForm">
+            <input type="text" id="username" placeholder="Full Name" class="input-field" required>
+            <input type="email" id="email" placeholder="Email Address" class="input-field" required>
+            <input type="tel" id="phone_number" placeholder="Phone Number (e.g., +2348012345678)" class="input-field" required>
+            <input type="text" id="location" placeholder="Your General Location (e.g., Kaduna State)" class="input-field" required>
+            <input type="text" id="farm_location_detail" placeholder="Farm Specific Location (e.g., Zaria, Tudun Wada)" class="input-field" required>
+            <input type="number" id="farm_size_hectares" placeholder="Approx. Farm Size (Hectares, e.g., 5.5)" class="input-field" step="0.1">
+            <input type="password" id="password" placeholder="Password" class="input-field" required>
+            <input type="password" id="password2" placeholder="Confirm Password" class="input-field" required>
+            <div class="text-left text-sm mb-4 text-gray-600">
+                <input type="checkbox" id="terms" class="mr-2" required>
+                <label for="terms">I agree to the <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>.</label>
+            </div>
+            <button type="submit" class="signup-button">Register as Farmer</button>
+        </form>
+        <div id="messageBox" class="message-box"></div>
+        <div class="mt-6 text-gray-600">
+            Already have an account? <a href="/login_selection.html" class="link">Login Here</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/'; // Your Django backend API base URL
+
+        // Function to get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        document.getElementById('farmerSignupForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+            
+            const messageBox = document.getElementById('messageBox');
+            messageBox.style.display = 'none'; // Hide previous messages
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const phone_number = document.getElementById('phone_number').value;
+            const location = document.getElementById('location').value;
+            const farm_location_detail = document.getElementById('farm_location_detail').value;
+            const farm_size_hectares = document.getElementById('farm_size_hectares').value;
+            const password = document.getElementById('password').value;
+            const password2 = document.getElementById('password2').value;
+            const termsChecked = document.getElementById('terms').checked;
+
+            if (password !== password2) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+
+            if (!termsChecked) {
+                showMessage('You must agree to the Terms of Service and Privacy Policy.', 'error');
+                return;
+            }
+
+            // Construct the data payload
+            const formData = {
+                username: username,
+                email: email,
+                phone_number: phone_number,
+                location: location,
+                farm_location_detail: farm_location_detail,
+                farm_size_hectares: farm_size_hectares ? parseFloat(farm_size_hectares) : null, // Send as float or null
+                password: password,
+                // CRITICAL FIX: Change 'password2' to 'confirm_password' to match backend serializer
+                confirm_password: password2 
+            };
+
+            console.log('Sending farmer registration formData:', formData); // <-- New diagnostic log
+
+            const csrftoken = getCookie('csrftoken'); // Get the CSRF token
+
+            try {
+                const response = await fetch(`${API_BASE_URL}users/register/farmer/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken // Include the CSRF token in the headers
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // Status codes 200-299
+                    showMessage(data.message || 'Farmer registered successfully!', 'success');
+                    this.reset(); // Clear the form
+                    // Optionally redirect to login page after successful registration
+                    // setTimeout(() => { window.location.href = '/login_selection.html'; }, 3000);
+                } else {
+                    // Handle API errors (e.g., validation errors from Django)
+                    let errorMessage = 'Registration failed.';
+                    // Check for specific field errors
+                    for (const key in data) {
+                        if (Array.isArray(data[key])) {
+                            errorMessage += ` ${key.replace(/_/g, ' ')}: ${data[key].join(', ')}`;
+                        } else if (typeof data[key] === 'string') {
+                            errorMessage += ` ${data[key]}`; // For non_field_errors or detail
+                        }
+                    }
+                    if (!Object.keys(data).length && !response.ok) { // Generic error if no specific messages
+                        errorMessage = `Error: ${response.status} ${response.statusText}. Please check server logs.`;
+                    }
+                    
+                    showMessage(errorMessage, 'error');
+                }
+            } catch (error) {
+                console.error('Error during farmer registration:', error);
+                showMessage('An unexpected error occurred. Please try again later. Check console for details.', 'error');
+            }
+        });
+
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Add success or error class
+            messageBox.style.display = 'block';
+        }
+
+        // Add fallback for logo image if it fails to load
+        document.querySelector('img[alt="Soilgenie Logo"]').onerror = function() {
+            this.onerror=null; // Prevent infinite loop if fallback also fails
+            this.src='https://placehold.co/100x100/A7F3D0/065F46?text=SG'; // Placeholder image
+        };
+    </script>
+</body>
+</html>
