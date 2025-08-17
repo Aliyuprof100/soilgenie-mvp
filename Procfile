@@ -1,1 +1,1 @@
-web: /opt/render/project/src/.venv/bin/gunicorn soilgenie_backend.wsgi:application --bind 0.0.0.0:$PORT
+web: python -m gunicorn soilgenie_backend.wsgi:application --bind 0.0.0.0:$PORT
