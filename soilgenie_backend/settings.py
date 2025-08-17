@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url # Add this import at the very top of settings.py
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,11 +25,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=1*m*d(g!k%m5%q+d63600^0e_r-y7y*g&w@0k%0%f2n3r-w3y'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # NEW: Define ALLOWED_HOSTS for security when DEBUG is False
 # Even with DEBUG = True, it's good practice to set this.
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
 
 
 # Application definition
@@ -56,15 +58,26 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Add this line HERE
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 # CORS settings to allow frontend to communicate with Django backend
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000", # Allow your local frontend
     "http://127.0.0.1:8000", # Allow your local frontend
+    "https://your-frontend-static-site.onrender.com", # 👈 We'll get this URL later!
     # Add any other frontend URLs when deployed, e.g., "https://yourfrontenddomain.com"
 ]
 CORS_ALLOW_CREDENTIALS = True # Allow cookies to be sent with cross-site requests (for CSRF token)
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://your-frontend-static-site.onrender.com", # 👈 We'll get this URL later!
+    "https://your-backend-service.onrender.com", # 👈 We'll get this URL later!
+]
 
 ROOT_URLCONF = 'soilgenie_backend.urls'
 
@@ -90,11 +103,14 @@ WSGI_APPLICATION = 'soilgenie_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
+
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3',  # This is for your local computer
+        conn_max_age=600 # Helps keep things fast
+    )
 }
 
 
@@ -136,6 +152,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Where WhiteNoise will find your static files
+
+# WhiteNoise configuration
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # <--- THIS IS CRUCIAL: Tells Django where to look for your static files (including your frontend HTML)
 STATICFILES_DIRS = [
